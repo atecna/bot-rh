@@ -5,7 +5,11 @@ import {
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
+import { useEffect, useState } from "react";
+import type { Socket } from "socket.io-client";
+import io from "socket.io-client";
 import type { LinksFunction } from "@remix-run/node";
+import { SocketProvider } from "~/context";
 
 import "./tailwind.css";
 
@@ -41,5 +45,36 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  const [socket, setSocket] = useState<Socket>();
+
+  useEffect(() => {
+    const socket = io({
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
+    });
+    
+    socket.on('connect', () => {
+      console.log('[CLIENT] Socket connecté:', socket.id);
+    });
+    
+    socket.on('test', (msg) => {
+      console.log('[CLIENT] Test reçu:', msg);
+    });
+    
+    socket.on('disconnect', () => {
+      console.log('[CLIENT] Socket déconnecté');
+    });
+    
+    setSocket(socket);
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+  return (
+    <SocketProvider socket={socket}>
+      <Outlet />
+    </SocketProvider>
+  );
 }

@@ -1,0 +1,38 @@
+version: 38
+jobs:
+- name: Build & Deploy
+  steps:
+  - !CheckoutStep
+    name: checkout code
+    cloneCredential: !DefaultCredential {}
+    withLfs: false
+    withSubmodules: false
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  - !BuildImageStep
+    name: Build docker image
+    buildPath: .
+    output: !RegistryOutput
+      tags: registry.paladin.ovh/pholon-2025:latest registry.paladin.ovh/pholon-2025:@tag@
+    registryLogins:
+    - registryUrl: registry.paladin.ovh
+      userName: flo
+      passwordSecret: Registry
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  - !CommandStep
+    name: Update app
+    runInContainer: true
+    image: alpine:latest
+    interpreter: !DefaultInterpreter
+      commands: |
+        apk add curl
+        curl -H "Authorization: Bearer Azertyu@@1" "https://wt.paladin.ovh/v1/update?image=registry.paladin.ovh/pholon-2025"
+    useTTY: true
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  triggers:
+  - !TagCreateTrigger
+    branches: main
+    projects: Flo/pholon-2025
+  retryCondition: never
+  maxRetries: 3
+  retryDelay: 30
+  timeout: 14400 

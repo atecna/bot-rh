@@ -4,14 +4,20 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
 } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import type { Socket } from "socket.io-client";
 import io from "socket.io-client";
 import type { LinksFunction } from "@remix-run/node";
 import { SocketProvider } from "~/context";
-
+import packageJson from "../package.json";
 import "./tailwind.css";
+
+export const loader = async () => {
+  console.log('version', packageJson.version);
+  return { version: packageJson.version };
+};
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -26,25 +32,8 @@ export const links: LinksFunction = () => [
   },
 ];
 
-export function Layout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <Meta />
-        <Links />
-      </head>
-      <body>
-        {children}
-        <ScrollRestoration />
-        <Scripts />
-      </body>
-    </html>
-  );
-}
-
 export default function App() {
+  const { version } = useLoaderData<typeof loader>();
   const [socket, setSocket] = useState<Socket>();
 
   useEffect(() => {
@@ -73,8 +62,21 @@ export default function App() {
   }, []);
 
   return (
-    <SocketProvider socket={socket}>
-      <Outlet />
-    </SocketProvider>
+    <html lang="fr">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <Meta />
+        <Links />
+      </head>
+      <body>
+        <SocketProvider socket={socket}>
+          <Outlet />
+          <div className="fixed bottom-1 right-2 text-xs text-white/30">v{version}</div>
+        </SocketProvider>
+        <ScrollRestoration />
+        <Scripts />
+      </body>
+    </html>
   );
 }

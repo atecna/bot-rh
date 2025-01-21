@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h1>Test getUserMedia</h1>
+<button id="btn">Start</button>
+<script>
+  document.getElementById('btn').addEventListener('click', async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+      alert("Micro OK !");
+      stream.getTracks().forEach(track => track.stop());
+    } catch (err) {
+      alert("Erreur: " + err.message);
+      console.error(err);
+    }
+  });
+</script>
+</body>
+</html>

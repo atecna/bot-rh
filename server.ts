@@ -50,8 +50,8 @@ app.disable("x-powered-by");
 
 // Add security headers
 app.use((req, res, next) => {
-  res.setHeader('Permissions-Policy', 'microphone=(self)');
-  res.setHeader('Feature-Policy', 'microphone *');
+  res.setHeader('Permissions-Policy', 'microphone=()');
+  res.setHeader('Feature-Policy', 'microphone "self"');
   next();
 });
 

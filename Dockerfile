@@ -18,8 +18,7 @@ WORKDIR /app
 
 # Installation des dépendances de production uniquement
 COPY package*.json ./
-RUN npm ci --production && \
-    npm install cross-env -g
+RUN npm ci --production
 
 # Copie des fichiers nécessaires depuis le stage de build
 COPY --from=builder /app/build ./build

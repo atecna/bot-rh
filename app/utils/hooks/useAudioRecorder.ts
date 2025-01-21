@@ -1,11 +1,37 @@
 // useAudioRecorder.ts
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export const useAudioRecorder = () => {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [permissionGranted, setPermissionGranted] = useState<boolean | null>(null);
+
+  const checkPermission = async () => {
+    try {
+      // Vérifie si l'API permissions est disponible
+      if (navigator.permissions && navigator.permissions.query) {
+        const result = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+        
+        if (result.state === 'granted') {
+          setPermissionGranted(true);
+          return true;
+        } else if (result.state === 'prompt') {
+          // Si on doit demander, on teste l'accès
+          return requestPermission();
+        } else {
+          setPermissionGranted(false);
+          return false;
+        }
+      } else {
+        // Fallback pour les navigateurs qui ne supportent pas l'API permissions
+        return requestPermission();
+      }
+    } catch (error) {
+      // Certains navigateurs peuvent lever une erreur sur permissions.query
+      return requestPermission();
+    }
+  };
 
   const requestPermission = async () => {
     try {
@@ -20,13 +46,18 @@ export const useAudioRecorder = () => {
     }
   };
 
-  const startRecording = async () => {
-    if (permissionGranted === null) {
-      const granted = await requestPermission();
-      if (!granted) return;
-    } else if (!permissionGranted) {
-      return;
+  useEffect(() => {
+    if (typeof navigator.mediaDevices !== 'undefined' && navigator.mediaDevices.getUserMedia!) {
+      checkPermission();
+    } else {
+      setPermissionGranted(false);
     }
+  }, []);
+
+  const startRecording = async () => {
+    // On vérifie toujours les permissions avant de commencer
+    const hasPermission = await checkPermission();
+    if (!hasPermission) return;
 
     setIsRecording(true);
     try {
@@ -47,6 +78,7 @@ export const useAudioRecorder = () => {
     } catch (error) {
       console.error("Error starting media recorder:", error);
       setIsRecording(false);
+      setPermissionGranted(false); // On met à jour l'état si l'accès est refusé
     }
   };
 

@@ -48,6 +48,13 @@ app.use(compression());
 // http://expressjs.com/en/advanced/best-practice-security.html#at-a-minimum-disable-x-powered-by-header
 app.disable("x-powered-by");
 
+// Add security headers
+app.use((req, res, next) => {
+  res.setHeader('Permissions-Policy', 'microphone=(self)');
+  res.setHeader('Feature-Policy', 'microphone *');
+  next();
+});
+
 // handle asset requests
 if (viteDevServer) {
   app.use(viteDevServer.middlewares);

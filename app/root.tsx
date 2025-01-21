@@ -71,7 +71,8 @@ export default function App() {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#000000" />
-        <meta httpEquiv="Permissions-Policy" content="microphone=*" />
+        <meta httpEquiv="Permissions-Policy" content="microphone=(self)" />
+        <meta httpEquiv="Feature-Policy" content="microphone *" />
         <Meta />
         <Links />
       </head>

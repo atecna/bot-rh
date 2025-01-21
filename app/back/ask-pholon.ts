@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import fs from 'fs';
 import path from 'path';
 import { Socket } from 'socket.io';
-import { textToSpeech } from './tts.server';
+import { textToSpeech } from './tts.server.js';
 
 const API_KEY = process.env.GOOGLE_API_KEY as string;
 const genAI = new GoogleGenerativeAI(API_KEY);

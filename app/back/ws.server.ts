@@ -1,6 +1,6 @@
 import { Socket } from "socket.io";
-import askPholon from "./ask-pholon";
-import { transcribeAudio } from "./transcribe.server";
+import askPholon from "./ask-pholon.js";
+import { transcribeAudio } from "./transcribe.server.js";
 
 export function handleSocket(socket: Socket) {
   socket.on("ask-question", (question: string) => {

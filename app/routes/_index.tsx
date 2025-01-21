@@ -17,6 +17,7 @@ export default function Index() {
     startRecording,
     stopRecording,
     audioBlob,
+    permissionGranted
   } = useAudioRecorder();
 
   useEffect(() => {
@@ -112,13 +113,19 @@ export default function Index() {
 
       <div className="absolute bottom-10 left-0 right-0 flex justify-center z-10">
         {isMediaAvailable ? (
-          <RecordingButton
-            isRecording={isRecording}
-            onTouchStart={onStart}
-            onTouchEnd={onEnd}
-            isThinking={isProcessing}
-            currentStatus={currentStatus}
-          />
+          permissionGranted === false ? (
+            <p className="text-white bg-red-500/50 p-4 rounded-lg">
+              Veuillez autoriser l&apos;accès au microphone pour parler à Pholon
+            </p>
+          ) : (
+            <RecordingButton
+              isRecording={isRecording}
+              onTouchStart={onStart}
+              onTouchEnd={onEnd}
+              isThinking={isProcessing}
+              currentStatus={currentStatus}
+            />
+          )
         ) : (
           <p className="text-white">Microphone non disponible</p>
         )}

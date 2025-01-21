@@ -32,6 +32,19 @@ export const links: LinksFunction = () => [
   },
 ];
 
+export const headers = () => ({
+  "Permissions-Policy": "microphone=self",
+  "Content-Security-Policy": `
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' 'unsafe-eval';
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src 'self' https://fonts.gstatic.com;
+    img-src 'self' data: blob:;
+    media-src 'self' blob:;
+    connect-src 'self' ws: wss: https:;
+  `.replace(/\s+/g, ' ').trim()
+});
+
 export default function App() {
   const { version } = useLoaderData<typeof loader>();
   const [socket, setSocket] = useState<Socket>();

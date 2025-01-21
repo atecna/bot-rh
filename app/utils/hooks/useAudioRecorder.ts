@@ -5,12 +5,32 @@ export const useAudioRecorder = () => {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [permissionGranted, setPermissionGranted] = useState<boolean | null>(null);
+
+  const requestPermission = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop());
+      setPermissionGranted(true);
+      return true;
+    } catch (error) {
+      console.error("Erreur de permission microphone:", error);
+      setPermissionGranted(false);
+      return false;
+    }
+  };
 
   const startRecording = async () => {
+    if (permissionGranted === null) {
+      const granted = await requestPermission();
+      if (!granted) return;
+    } else if (!permissionGranted) {
+      return;
+    }
+
     setIsRecording(true);
-    const constraints = { audio: true };
     try {
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder.current = new MediaRecorder(stream);
 
       const chunks: Blob[] = [];
@@ -44,5 +64,6 @@ export const useAudioRecorder = () => {
     startRecording,
     stopRecording,
     audioBlob,
+    permissionGranted
   };
 };

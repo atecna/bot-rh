@@ -15,12 +15,15 @@
     "@remix-run/node": "^2.15.2",
     "@remix-run/react": "^2.15.2",
     "@remix-run/serve": "^2.15.2",
+    "clsx": "^2.1.1",
     "express": "^4.21.2",
     "isbot": "^4.1.0",
+    "openai": "^4.79.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
+    "tailwind-merge": "^2.6.0",
     "tsx": "^4.19.2"
   },
   "devDependencies": {

@@ -1,120 +1,130 @@
-import { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { AudioVisualizer } from "~/components/AudioVisualiser";
+import RecordingButton from "~/components/RecordingButton";
 import { useSocket } from "~/context";
+import { useAudioRecorder } from "~/utils/hooks/useAudioRecorder";
 
 export default function Index() {
-  const [loading, setLoading] = useState(false);
-  const [generationTime, setGenerationTime] = useState<number | null>(null);
-  const [startTime, setStartTime] = useState<number | null>(null);
-  const [question, setQuestion] = useState("Quel est le serment de Paix?");
-  const [response, setResponse] = useState("");
+  const [currentStatus, setCurrentStatus] = useState("");
+  const [isMediaAvailable, setIsMediaAvailable] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [transcription, setTranscription] = useState("");
+  const [pholonText, setPholonText] = useState("");
+  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const socket = useSocket();
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  const {
+    isRecording,
+    startRecording,
+    stopRecording,
+    audioBlob,
+  } = useAudioRecorder();
 
   useEffect(() => {
     if (!socket) return;
-
-    socket.on('stream-response', (chunk: string) => {
-      console.log(`[${new Date().toISOString()}] Chunk reçu:`, chunk);
-      setResponse(prev => prev + chunk);
-      
-      const utterance = new SpeechSynthesisUtterance(chunk);
-      utterance.lang = 'fr-FR';
-      speechSynthesis.speak(utterance);
+    
+    socket.on("status", (data) => {
+      setCurrentStatus(data);
     });
 
-    socket.on('stream-end', () => {
-      setLoading(false);
-      if (startTime) {
-        setGenerationTime(Date.now() - startTime);
-      }
+    socket.on("transcription", (text: string) => {
+      setTranscription(text);
+      setPholonText("");
+      setAudioChunks([]);
+    });
+
+    socket.on("stream-response", (chunk: string) => {
+      setIsProcessing(true);
+      setPholonText(prev => prev + chunk);
+    });
+
+    socket.on("audio-chunk", (chunk: Buffer) => {
+      const blob = new Blob([chunk], { type: "audio/mp3" });
+      setAudioChunks(prev => [...prev, blob]);
+    });
+
+    socket.on("stream-end", () => {
+      setIsProcessing(false);
+      setCurrentStatus("");
+    });
+
+    socket.on("error", (error: string) => {
+      console.error("Socket error:", error);
+      setIsProcessing(false);
+      setCurrentStatus("");
     });
 
     return () => {
-      socket.off('stream-response');
-      socket.off('stream-end');
+      socket.off("status");
+      socket.off("transcription");
+      socket.off("stream-response");
+      socket.off("audio-chunk");
+      socket.off("stream-end");
+      socket.off("error");
     };
-  }, [socket, isSpeaking]);
+  }, [socket]);
 
-  const askPholon = (question: string) => {
-    setLoading(true);
-    setResponse("");
-    setGenerationTime(null);
-    setStartTime(Date.now());
-    if (!socket) return;
-    socket.emit('ask-question', question);
-  };
+  useEffect(() => {
+    if (audioBlob && socket) {
+      setIsProcessing(true);
+      socket.emit("audio-data", audioBlob);
+    }
+  }, [audioBlob, socket]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    setIsMediaAvailable(
+      typeof navigator.mediaDevices.getUserMedia !== "undefined"
+    );
+  }, []);
+
+  const onStart = (e: React.TouchEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    if (!question.trim()) return;
-    askPholon(question);
+    e.stopPropagation();
+    startRecording();
   };
 
-  const toggleSpeech = () => {
-    if (isSpeaking) {
-      speechSynthesis.cancel();
-    }
-    setIsSpeaking(!isSpeaking);
-    if (!isSpeaking && response) {
-      const utterance = new SpeechSynthesisUtterance(response);
-      utterance.lang = 'fr-FR';
-      speechSynthesis.speak(utterance);
-    }
+  const onEnd = (e: React.TouchEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    stopRecording();
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen p-4">
-      <h1 className="text-3xl font-bold mb-6">Parle à Pholon</h1>
+    <div className="flex flex-col items-center justify-center h-screen relative">
+      <div className="absolute inset-0 bg-cover bg-no-repeat bg-center z-0" 
+           style={{ backgroundImage: "url('/pholon.png')" }} />
       
-      <form onSubmit={handleSubmit} className="w-full max-w-2xl">
-        <div className="flex gap-2">
-          <textarea
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            className="flex-1 p-2 border rounded-md"
-            placeholder="Pose ta question ici..."
-            rows={3}
-            disabled={loading}
-          />
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-500 text-white rounded-md h-fit"
-            disabled={loading || !question.trim()}
-          >
-            Envoyer
-          </button>
-          <button
-            type="button"
-            onClick={() => socket?.emit('ask-question-test', 'test')}
-            className="px-4 py-2 bg-green-500 text-white rounded-md h-fit"
-            disabled={loading}
-          >
-            Test Stream
-          </button>
-        </div>
-      </form>
+      <a href="/history" className="absolute top-0 right-0 p-4 z-10">
+        <img src="/history.svg" width={24} alt="history" />
+      </a>
 
-      <div className="mt-6 w-full max-w-2xl">
-        <div className="flex items-center gap-2 mb-2">
-          <h2 className="text-xl font-semibold">Réponse :</h2>
-          <button
-            onClick={toggleSpeech}
-            className={`px-2 py-1 rounded ${isSpeaking ? 'bg-red-500' : 'bg-blue-500'} text-white`}
-          >
-            {isSpeaking ? '🔇 Stop' : '🔊 Lire'}
-          </button>
-        </div>
-        <p 
-          className="response-content text-gray-900 mt-2 whitespace-pre-line min-h-[100px] p-4 border rounded bg-gray-50 max-h-[400px] overflow-y-auto"
-        >
-          {response || (loading ? "Pholon réfléchit..." : "En attente d'une question...")}
-        </p>
-        {generationTime && !loading && (
-          <p className="text-sm text-gray-500 mt-2">
-            Réponse générée en {(generationTime / 1000).toFixed(2)} secondes
+      <div className="absolute top-1/4 left-0 right-0 flex flex-col items-center gap-4 p-4 z-10">
+        {transcription && (
+          <p className="text-white bg-black/50 p-4 rounded-lg">
+            &ldquo;{transcription}&rdquo;
+          </p>
+        )}
+        {pholonText && (
+          <p className="text-white bg-blue-500/50 p-4 rounded-lg max-w-2xl">
+            {pholonText}
           </p>
         )}
       </div>
+
+      <div className="absolute bottom-10 left-0 right-0 flex justify-center z-10">
+        {isMediaAvailable ? (
+          <RecordingButton
+            isRecording={isRecording}
+            onTouchStart={onStart}
+            onTouchEnd={onEnd}
+            isThinking={isProcessing}
+            currentStatus={currentStatus}
+          />
+        ) : (
+          <p className="text-white">Microphone non disponible</p>
+        )}
+      </div>
+
+      <AudioVisualizer audioChunks={audioChunks} />
     </div>
   );
 }

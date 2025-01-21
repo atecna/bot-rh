@@ -105,54 +105,57 @@ export default function Index() {
   // -------------------------------
   return (
     <div className="fixed inset-0 flex flex-col items-center justify-center overflow-hidden">
-      {/* Background */}
-      <div
-        className="absolute inset-0 bg-cover bg-no-repeat bg-center z-0"
-        style={{ backgroundImage: "url('/pholon.png')" }}
-      />
-
-      {/* Bouton pour accéder à un historique */}
-      <a href="/history" className="absolute top-0 right-0 p-4 z-10">
-        <img src="/history.svg" width={24} alt="history" />
-      </a>
-
-      {/* Zone d'affichage du texte transcrit / généré */}
-      <div className="absolute top-1/4 left-0 right-0 flex flex-col items-center gap-4 p-4 z-10">
-        {transcription && (
-          <p className="text-white bg-black/50 p-4 rounded-lg">
-            &ldquo;{transcription}&rdquo;
-          </p>
-        )}
-        {pholonText && (
-          <p className="text-white bg-blue-500/50 p-4 rounded-lg max-w-2xl">
-            {pholonText}
-          </p>
-        )}
-
-        {/* Message si le micro est refusé */}
-        {permissionGranted === false && (
-          <p className="text-red-500 bg-black/50 p-2 rounded-md">
-            Accès au micro refusé. Vérifiez vos paramètres.
-          </p>
-        )}
-      </div>
-
-      {/* Bouton d'enregistrement */}
-      <div className="absolute bottom-[5vh] left-0 right-0 flex justify-center z-10">
-        <RecordingButton
-          isRecording={isRecording}
-          // Ici on utilise des PointerEvents
-          // Si tu préfères rester sur le tactile only :
-          onTouchStart={handlePointerDown}
-          onTouchEnd={handlePointerUp}
-
-          isThinking={isProcessing}
-          currentStatus={currentStatus}
+      {/* Container principal centré pour desktop */}
+      <div className="relative w-full h-full max-w-3xl mx-auto">
+        {/* Background */}
+        <div
+          className="absolute inset-0 bg-cover bg-no-repeat bg-center z-0"
+          style={{ backgroundImage: "url('/pholon.png')" }}
         />
-      </div>
 
-      {/* Visualisation audio (chunks reçus) */}
-      <AudioVisualizer audioChunks={audioChunks} />
+        {/* Bouton pour accéder à l'historique */}
+        <a href="/history" className="absolute top-0 right-0 p-4 z-10">
+          <img src="/history.svg" width={24} alt="history" />
+        </a>
+
+        {/* Zone d'affichage du texte transcrit / généré */}
+        <div className="absolute top-1/4 left-0 right-0 flex flex-col items-center gap-4 p-4 z-10">
+          {transcription && (
+            <p className="text-white bg-black/50 p-4 rounded-lg">
+              &ldquo;{transcription}&rdquo;
+            </p>
+          )}
+          {pholonText && (
+            <p className="text-white bg-blue-500/50 p-4 rounded-lg max-w-2xl">
+              {pholonText}
+            </p>
+          )}
+
+          {/* Message si le micro est refusé */}
+          {permissionGranted === false && (
+            <p className="text-red-500 bg-black/50 p-2 rounded-md">
+              Accès au micro refusé. Vérifiez vos paramètres.
+            </p>
+          )}
+        </div>
+
+        {/* Bouton d'enregistrement */}
+        <div className="absolute bottom-[5vh] left-0 right-0 flex justify-center z-10">
+          <RecordingButton
+            isRecording={isRecording}
+            // Ici on utilise des PointerEvents
+            // Si tu préfères rester sur le tactile only :
+            onTouchStart={handlePointerDown}
+            onTouchEnd={handlePointerUp}
+
+            isThinking={isProcessing}
+            currentStatus={currentStatus}
+          />
+        </div>
+
+        {/* Visualisation audio (chunks reçus) */}
+        <AudioVisualizer audioChunks={audioChunks} />
+      </div>
     </div>
   );
 }

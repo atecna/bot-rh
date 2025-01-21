@@ -1,94 +1,68 @@
-// useAudioRecorder.ts
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
-export const useAudioRecorder = () => {
+export function useAudioRecorder() {
   const [isRecording, setIsRecording] = useState(false);
-  const mediaRecorder = useRef<MediaRecorder | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [permissionGranted, setPermissionGranted] = useState<boolean | null>(null);
 
-  const checkPermission = async () => {
-    try {
-      // Vérifie si l'API permissions est disponible
-      if (navigator.permissions && navigator.permissions.query) {
-        const result = await navigator.permissions.query({ name: 'microphone' as PermissionName });
-        
-        if (result.state === 'granted') {
-          setPermissionGranted(true);
-          return true;
-        } else if (result.state === 'prompt') {
-          // Si on doit demander, on teste l'accès
-          return requestPermission();
-        } else {
-          setPermissionGranted(false);
-          return false;
-        }
-      } else {
-        // Fallback pour les navigateurs qui ne supportent pas l'API permissions
-        return requestPermission();
-      }
-    } catch (error) {
-      // Certains navigateurs peuvent lever une erreur sur permissions.query
-      return requestPermission();
-    }
-  };
+  // Refs pour garder la trace du MediaRecorder et du Stream
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
 
-  const requestPermission = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach(track => track.stop());
-      setPermissionGranted(true);
-      return true;
-    } catch (error) {
-      console.error("Erreur de permission microphone:", error);
-      setPermissionGranted(false);
-      return false;
-    }
-  };
-
-  useEffect(() => {
-    if (typeof navigator.mediaDevices !== 'undefined' && navigator.mediaDevices.getUserMedia!) {
-      checkPermission();
-    } else {
-      setPermissionGranted(false);
-    }
-  }, []);
-
+  /**
+   * Lance la capture du micro et l'enregistrement
+   */
   const startRecording = async () => {
-    // On vérifie toujours les permissions avant de commencer
-    const hasPermission = await checkPermission();
-    if (!hasPermission) return;
-
-    setIsRecording(true);
     try {
+      // Prompt utilisateur : autorisation micro
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorder.current = new MediaRecorder(stream);
+      setPermissionGranted(true);
 
-      const chunks: Blob[] = [];
-      mediaRecorder.current.ondataavailable = (evt: BlobEvent) => {
-        chunks.push(evt.data);
+      // Sauvegarde du stream pour l'arrêter plus tard
+      mediaStreamRef.current = stream;
+
+      // Création du MediaRecorder
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+
+      const chunks: BlobPart[] = [];
+      // À chaque chunk, on l'empile
+      mediaRecorder.ondataavailable = (e: BlobEvent) => {
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
       };
 
-      mediaRecorder.current.onstop = async () => {
+      // Lorsque le recorder s'arrête, on génère un Blob final
+      mediaRecorder.onstop = () => {
         const blob = new Blob(chunks, { type: "audio/webm" });
         setAudioBlob(blob);
       };
 
-      mediaRecorder.current.start();
+      // On démarre l'enregistrement
+      mediaRecorder.start();
+      setIsRecording(true);
     } catch (error) {
-      console.error("Error starting media recorder:", error);
+      console.error("Erreur d’accès au microphone :", error);
+      setPermissionGranted(false);
       setIsRecording(false);
-      setPermissionGranted(false); // On met à jour l'état si l'accès est refusé
     }
   };
 
+  /**
+   * Stoppe l'enregistrement
+   */
   const stopRecording = () => {
     setIsRecording(false);
-    if (mediaRecorder.current) {
-      mediaRecorder.current.stop();
-      mediaRecorder.current.stream.getTracks().forEach((track) => track.stop());
-      mediaRecorder.current = null;
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
     }
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current = null;
+    }
+    mediaRecorderRef.current = null;
   };
 
   return {
@@ -98,4 +72,4 @@ export const useAudioRecorder = () => {
     audioBlob,
     permissionGranted
   };
-};
+}

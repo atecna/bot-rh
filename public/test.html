@@ -3,15 +3,32 @@
 <body>
 <h1>Test getUserMedia</h1>
 <button id="btn">Start</button>
+<div id="status"></div>
+
 <script>
+  const status = document.getElementById('status');
+
+  // Vérification du support
+  status.innerHTML += `<p>mediaDevices supporté: ${!!navigator.mediaDevices}</p>`;
+  status.innerHTML += `<p>getUserMedia supporté: ${!!navigator.mediaDevices?.getUserMedia}</p>`;
+
   document.getElementById('btn').addEventListener('click', async () => {
     try {
+      status.innerHTML += '<p>Demande de permission...</p>';
       const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+      status.innerHTML += '<p>Permission accordée !</p>';
       alert("Micro OK !");
       stream.getTracks().forEach(track => track.stop());
     } catch (err) {
-      alert("Erreur: " + err.message);
-      console.error(err);
+      status.innerHTML += `<p>Erreur: ${err.name} - ${err.message}</p>`;
+      if (err.name === 'NotAllowedError') {
+        status.innerHTML += '<p>La permission a été refusée par le navigateur ou l\'utilisateur</p>';
+      } else if (err.name === 'NotFoundError') {
+        status.innerHTML += '<p>Aucun microphone trouvé</p>';
+      } else if (err.name === 'NotReadableError') {
+        status.innerHTML += '<p>Le microphone est déjà utilisé</p>';
+      }
+      console.error('Détails complets de l\'erreur:', err);
     }
   });
 </script>

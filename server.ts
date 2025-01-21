@@ -50,8 +50,13 @@ app.disable("x-powered-by");
 
 // Add security headers
 app.use((req, res, next) => {
-  res.setHeader('Permissions-Policy', 'microphone=()');
-  res.setHeader('Feature-Policy', 'microphone "self"');
+  // Permissions plus permissives pour le micro
+  res.setHeader('Permissions-Policy', 'microphone=*');
+  res.setHeader('Feature-Policy', 'microphone *');
+  // Headers de sécurité supplémentaires
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
 });
 

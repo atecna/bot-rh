@@ -30,9 +30,8 @@ jobs:
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   triggers:
   - !TagCreateTrigger
-    branches: main
-    projects: Flo/pholon-2025
+    projects: pholon-2025
   retryCondition: never
   maxRetries: 3
   retryDelay: 30
-  timeout: 14400 
+  timeout: 14400

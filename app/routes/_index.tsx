@@ -14,7 +14,7 @@ export default function Index() {
   // Récupération du socket
   const socket = useSocket();
 
-  // Récupération du hook d’enregistrement audio
+  // Récupération du hook d'enregistrement audio
   const {
     isRecording,
     startRecording,
@@ -81,14 +81,14 @@ export default function Index() {
   // -------------------------------
   useEffect(() => {
     if (audioBlob && socket) {
-      // On suppose que tu veux l’envoyer immédiatement
+      // On suppose que tu veux l'envoyer immédiatement
       setIsProcessing(true);
       socket.emit("audio-data", audioBlob);
     }
   }, [audioBlob, socket]);
 
   // -------------------------------
-  // Handlers pour l’enregistrement
+  // Handlers pour l'enregistrement
   // (ici on utilise PointerEvents pour
   // être compatible mobile + desktop)
   // -------------------------------
@@ -104,7 +104,7 @@ export default function Index() {
   // Rendu
   // -------------------------------
   return (
-    <div className="flex flex-col items-center justify-center h-screen relative">
+    <div className="fixed inset-0 flex flex-col items-center justify-center overflow-hidden">
       {/* Background */}
       <div
         className="absolute inset-0 bg-cover bg-no-repeat bg-center z-0"
@@ -116,7 +116,7 @@ export default function Index() {
         <img src="/history.svg" width={24} alt="history" />
       </a>
 
-      {/* Zone d’affichage du texte transcrit / généré */}
+      {/* Zone d'affichage du texte transcrit / généré */}
       <div className="absolute top-1/4 left-0 right-0 flex flex-col items-center gap-4 p-4 z-10">
         {transcription && (
           <p className="text-white bg-black/50 p-4 rounded-lg">
@@ -138,7 +138,7 @@ export default function Index() {
       </div>
 
       {/* Bouton d'enregistrement */}
-      <div className="absolute bottom-10 left-0 right-0 flex justify-center z-10">
+      <div className="absolute bottom-[5vh] left-0 right-0 flex justify-center z-10">
         <RecordingButton
           isRecording={isRecording}
           // Ici on utilise des PointerEvents

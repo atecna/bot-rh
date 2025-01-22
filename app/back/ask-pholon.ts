@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { Socket } from 'socket.io';
 import { textToSpeech } from './tts.server.js';
-import { OperationTimer } from './helpers/OperationTimer.js';
+import { OperationTimer } from '../utils/timer.server.js';
 
 // Configuration depuis les variables d'environnement
 const CONFIG = {
@@ -24,7 +24,8 @@ const genAI = new GoogleGenerativeAI(CONFIG.apiKey);
 // Chargement des ressources au démarrage
 const RESOURCES = {
   guideJoueur: loadResource('guide_joueur.md'),
-  pholonInstructions: loadResource('pholon.md')
+  pholonInstructions: loadResource('pholon.md'),
+  telamok: loadResource('telamok.md')
 };
 
 /**
@@ -113,6 +114,7 @@ export default async function askPholon(socket: Socket, rawQuestion: string): Pr
         parts: [
           { text: `Voici le guide complet du joueur que l'on appellera "GUIDE_PRINCIPAL" :\n\n${RESOURCES.guideJoueur}` },
           { text: `Voici les instructions pour être Pholon : \n\n${RESOURCES.pholonInstructions}` },
+          { text: `Voici les informations sur la nécropole de Telamok : \n\n${RESOURCES.telamok}` },
           { text: 'RAPPELLE TOI QUE TU ES PHOLON, ET QUE TU REPONDS SOUS FORME D\'UNE CONVERSATION. SOIT CLAIR, SOIT SIMPLE, SOIT NATURAL ET CONCIS' },
           { text: 'Essaye de répondre en moins de 100 mots, tout en terminant la phrase.' },
           { text: `Voici la question du joueur à Pholon : ${rawQuestion}` }

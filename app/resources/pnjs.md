@@ -86,7 +86,7 @@ Bien sûr, voici la liste des PNJ nommés que vous avez rencontrés, avec leur d
 *   **Maximus** (Gladiateur LM): Un esclavagiste impitoyable. Il gère le marché des minotaures.
 
 ### **Sur l'Ultros**
-*   **Estor Arkelander** (Spectre): Un seigneur dragon qui hante sa trière.
-*   **Davos** (Fantôme nain): Ancien quartier maître qui hante le pont supérieur de l'Ultros.
-*   **Métron** (Fantôme): Un ancien navigateur qui hante les quartiers de l'équipage sur l'Ultros.
-*   **Skathon** (Fantôme) : Ancien second d'Estor, qui hante sa cabine.
+*   **Estor Arkelander** (Spectre): Un seigneur dragon qui hante l'Ultros.
+*   **Davos** (Fantôme nain): Ancien quartier maître qui était un traitre sur le pont supérieur de l'Ultros.
+*   **Métron** (Fantôme): Un ancien navigateur qui était un traitre sur les quartiers de l'équipage sur l'Ultros.
+*   **Skathon** (Fantôme) : Ancien second d'Estor, qui était un traitre sur sa cabine.

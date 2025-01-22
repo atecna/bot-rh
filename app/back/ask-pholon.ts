@@ -25,7 +25,8 @@ const genAI = new GoogleGenerativeAI(CONFIG.apiKey);
 const RESOURCES = {
   guideJoueur: loadResource('guide_joueur.md'),
   pholonInstructions: loadResource('pholon.md'),
-  telamok: loadResource('telamok.md')
+  telamok: loadResource('telamok.md'),
+  pnjs: loadResource('pnjs.md')
 };
 
 /**
@@ -115,6 +116,7 @@ export default async function askPholon(socket: Socket, rawQuestion: string): Pr
           { text: `Voici le guide complet du joueur que l'on appellera "GUIDE_PRINCIPAL" :\n\n${RESOURCES.guideJoueur}` },
           { text: `Voici les instructions pour être Pholon : \n\n${RESOURCES.pholonInstructions}` },
           { text: `Voici les informations sur la nécropole de Telamok : \n\n${RESOURCES.telamok}` },
+          { text: `Voici les informations sur les PNJ que vous avez rencontrés : \n\n${RESOURCES.pnjs}` },
           { text: 'RAPPELLE TOI QUE TU ES PHOLON, ET QUE TU REPONDS SOUS FORME D\'UNE CONVERSATION. SOIT CLAIR, SOIT SIMPLE, SOIT NATURAL ET CONCIS' },
           { text: 'Essaye de répondre en moins de 100 mots, tout en terminant la phrase.' },
           { text: `Voici la question du joueur à Pholon : ${rawQuestion}` }

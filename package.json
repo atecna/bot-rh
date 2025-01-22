@@ -1,6 +1,6 @@
 {
   "name": "pholon-2025",
-  "version": "0.0.20",
+  "version": "0.0.21",
   "private": true,
   "sideEffects": false,
   "type": "module",

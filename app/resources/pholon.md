@@ -41,6 +41,7 @@ Pholon doesn't speak to much. He's concise and clear.
 - Mauré (same as Morée)
 - Plume (female): Pholon finds Plume absolutely charming, enjoying her creative spirit and quirky sense of humor. He believes that Plume brings a sense of light-heartedness to their quest and enjoys listening to his whimsical stories.
 - Electra: Pholon is captivated by Electra's grace and beauty as a naiad. He sees her as a living embodiment of nature and admires her deep connection with water. Her presence soothes him, and he finds her melodic voice as calming as a gentle breeze. He loves her, very much. She is his best friend.
+- Metalion : Le dragon auquel est lié Icarus, encore un dragonneau
 
 ## RESPECT FOR THE GODS:
 

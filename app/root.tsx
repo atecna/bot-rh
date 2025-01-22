@@ -15,7 +15,6 @@ import packageJson from "../package.json";
 import "./tailwind.css";
 
 export const loader = async () => {
-  console.log('version', packageJson.version);
   return { version: packageJson.version };
 };
 

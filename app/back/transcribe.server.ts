@@ -5,28 +5,46 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Mots spécifiques à Thyléa pour aider la transcription
-const PROMPT = `Pholon, Anora, Thyléa, Kentimane, Sydon, Luthéria, Mytros, Volkan, Pythor, Vallus, Kyrah, Versi, Estoria, Arésie, Praxys, Gygans, Stimfées, Hoplites, Kopis, Chakram, Xiphos, Acaste, Leyland, Delphion, Tesséla, Moxéna, l'Arbre-Cœur, Morée, Plume, Icarus, Paelias, Electra, Céruléen, Mytros (la cité), Arésien, Enfers, Ultros, Arkelander, Arkelon, Xandéria, Damon, Ophéa, Hexia, Thémis, Atrokos, Odysséens`;
+/** Liste des termes spécifiques à l'univers de Thyléa pour améliorer la précision de la transcription */
+const THYLEAN_TERMS = [
+  "Pholon", "Anora", "Thyléa", "Kentimane", "Sydon", "Luthéria", "Mytros",
+  "Volkan", "Pythor", "Vallus", "Kyrah", "Versi", "Estoria", "Arésie",
+  "Praxys", "Gygans", "Stimfées", "Hoplites", "Kopis", "Chakram", "Xiphos",
+  "Acaste", "Leyland", "Delphion", "Tesséla", "Moxéna", "l'Arbre-Cœur",
+  "Morée", "Plume", "Icarus", "Paelias", "Electra", "Céruléen", "Mytros",
+  "Arésien", "Enfers", "Ultros", "Arkelander", "Arkelon", "Xandéria",
+  "Damon", "Ophéa", "Hexia", "Thémis", "Atrokos", "Odysséens"
+].join(", ");
 
+/**
+ * Transcrit un fichier audio en texte en utilisant l'API OpenAI Whisper.
+ * @param socket - Instance de Socket.IO pour émettre les statuts et résultats.
+ * @param audioBlob - Données audio au format Blob à transcrire.
+ * @returns Le texte transcrit.
+ * @throws Erreur si la transcription échoue.
+ */
 export async function transcribeAudio(socket: Socket, audioBlob: Blob): Promise<string> {
-  socket.emit("status", "J'essaie de comprendre ta langue...");
-  
   try {
-    // Conversion du Blob en File
-    const audioFile = new File([audioBlob], "audio.webm", { type: "audio/webm" });
+    socket.emit("status", "Transcription audio en cours...");
     
-    const response = await openai.audio.transcriptions.create({
+    const audioFile = new File([audioBlob], "audio.webm", { 
+      type: "audio/webm" 
+    });
+    
+    const transcription = await openai.audio.transcriptions.create({
       file: audioFile,
       model: "whisper-1",
       language: "fr",
-      prompt: PROMPT,
-
+      prompt: THYLEAN_TERMS,
     });
 
-    socket.emit("transcription", response.text);
-    return response.text;
+    const transcribedText = transcription.text.trim();
+    socket.emit("transcription", transcribedText);
+    return transcribedText;
+
   } catch (error) {
-    console.error("Erreur transcription:", error);
-    throw new Error("Erreur lors de la transcription audio");
+    console.error("Erreur de transcription:", error);
+    socket.emit("error", "Échec de la transcription audio");
+    throw new Error("Échec de la transcription audio");
   }
 } 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AudioVisualizer } from "~/components/AudioVisualiser";
+import { AudioPlayer } from "~/components/AudioPlayer";
 import RecordingButton from "~/components/RecordingButton";
 import { useSocket } from "~/context"; // Ton custom hook Socket.io
 import { useAudioRecorder } from "~/utils/hooks/useAudioRecorder";
@@ -143,18 +143,15 @@ export default function Index() {
         <div className="absolute bottom-[5vh] left-0 right-0 flex justify-center z-10">
           <RecordingButton
             isRecording={isRecording}
-            // Ici on utilise des PointerEvents
-            // Si tu préfères rester sur le tactile only :
-            onTouchStart={handlePointerDown}
-            onTouchEnd={handlePointerUp}
-
             isThinking={isProcessing}
             currentStatus={currentStatus}
+            onTouchStart={handlePointerDown}
+            onTouchEnd={handlePointerUp}
           />
         </div>
 
         {/* Visualisation audio (chunks reçus) */}
-        <AudioVisualizer audioChunks={audioChunks} />
+        <AudioPlayer audioChunks={audioChunks} />
       </div>
     </div>
   );

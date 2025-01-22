@@ -11,9 +11,13 @@ const THYLEAN_TERMS = [
   "Volkan", "Pythor", "Vallus", "Kyrah", "Versi", "Estoria", "Arésie",
   "Praxys", "Gygans", "Stimfées", "Hoplites", "Kopis", "Chakram", "Xiphos",
   "Acaste", "Leyland", "Delphion", "Tesséla", "Moxéna", "l'Arbre-Cœur",
-  "Morée", "Plume", "Icarus", "Paelias", "Electra", "Céruléen", "Mytros",
-  "Arésien", "Enfers", "Ultros", "Arkelander", "Arkelon", "Xandéria",
-  "Damon", "Ophéa", "Hexia", "Thémis", "Atrokos", "Odysséens"
+  "Morée", "Plume", "Icarus", "Paelias", "Electra", "Céruléen", "Arésien",
+  "Enfers", "Ultros", "Arkelander", "Arkelon", "Xandéria", "Damon",
+  "Ophéa", "Hexia", "Thémis", "Atrokos", "Odysséens", "Telamok",
+  "Mithralliques", "Seigneurs Dragons", "Xander Huorath", "Balmytria",
+  "Graxis", "Adonis Neurdagon", "Raspytrion", "Rizon Phobas", "Sybolkorax",
+  "Cosmo Phobas", "Myrto", "Lysis Arkelander", "Isadore Huorath",
+  "Gregor Huorath", "Nicholas Phobas", "Tysophale"
 ].join(", ");
 
 /**

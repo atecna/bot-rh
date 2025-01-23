@@ -44,7 +44,7 @@ export default function Index() {
     // Exemple: streaming de la réponse
     socket.on("stream-response", (chunk: string) => {
       setIsProcessing(true);
-      setPholonText((prev) => prev + chunk);
+      setPholonText((prev) => prev + chunk + " ");
     });
 
     // Exemple: on reçoit des chunks audio depuis le serveur pour visualisation

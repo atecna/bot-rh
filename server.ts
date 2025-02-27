@@ -88,52 +88,24 @@ app.use((req, res, next) => {
 });
 
 // Configuration en fonction du chemin de base
-if (BASE_PATH && BASE_PATH !== '/') {
-  console.log(`[INFO] Application configurée avec le chemin de base: ${BASE_PATH}`);
-  
-  // En mode développement, on utilise le middleware Vite
-  if (viteDevServer) {
-    app.use(viteDevServer.middlewares);
-  }
-  
-  // Middleware pour les assets statiques en mode production
-  if (!viteDevServer) {
-    app.use(`${BASE_PATH}/assets`, express.static("build/client/assets", { immutable: true, maxAge: "1y" }));
-    app.use(BASE_PATH, express.static("build/client", { maxAge: "1h" }));
-  }
-  
-  // Rediriger la racine vers le chemin de base
-  app.get('/', (req, res) => {
-    res.redirect(BASE_PATH);
-  });
-  
-  // Monter l'application Remix sur le chemin de base
-  app.use(BASE_PATH, (req, res, next) => {
-    // Vérifier si nous sommes sur le chemin exact /bot-rh
-    if (req.url === '') {
-      // Rediriger vers /bot-rh/ avec un slash à la fin pour éviter les redirections en boucle
-      res.redirect(`${BASE_PATH}/`);
-    } else {
-      next();
-    }
-  }, remixApp);
-} else {
-  console.log('[INFO] Application configurée à la racine');
-  
-  // En mode développement, on utilise le middleware Vite
-  if (viteDevServer) {
-    app.use(viteDevServer.middlewares);
-  }
-  
-  // Middleware pour les assets statiques en mode production
-  if (!viteDevServer) {
-    app.use('/assets', express.static("build/client/assets", { immutable: true, maxAge: "1y" }));
-    app.use(express.static("build/client", { maxAge: "1h" }));
-  }
-  
-  // Monter l'application Remix à la racine
-  app.use(remixApp);
+console.log("[INFO] Application configurée à la racine");
+
+// En mode développement, on utilise le middleware Vite
+if (viteDevServer) {
+  app.use(viteDevServer.middlewares);
 }
+
+// Middleware pour les assets statiques en mode production
+if (!viteDevServer) {
+  app.use(
+    "/assets",
+    express.static("build/client/assets", { immutable: true, maxAge: "1y" })
+  );
+  app.use(express.static("build/client", { maxAge: "1h" }));
+}
+
+// Monter l'application Remix à la racine
+app.use(remixApp);
 
 const port = process.env.PORT || 3000;
 

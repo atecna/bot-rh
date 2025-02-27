@@ -22,6 +22,7 @@ export default defineConfig({
         v3_singleFetch: true,
         v3_lazyRouteDiscovery: true,
       },
+      basename: process.env.BASE_PATH || '/',
     }),
     tsconfigPaths(),
   ],

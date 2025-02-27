@@ -1,0 +1,8 @@
+# docker-compose.yaml
+
+version: '3'
+services:
+  bot-rh:
+    build: .
+    ports:
+      - "3000:3000"

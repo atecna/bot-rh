@@ -2,22 +2,51 @@
 
 Ce projet est un assistant RH conversationnel qui utilise l'API Gemini pour répondre aux questions des employés en se basant sur la documentation RH.
 
+## Table des matières
+
+- [Fonctionnalités](#fonctionnalités)
+- [Prérequis](#prérequis)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Utilisation](#utilisation)
+- [Structure du projet](#structure-du-projet)
+- [Structure des données](#structure-des-données)
+- [Développement](#développement)
+- [Déploiement](#déploiement)
+- [Dépannage](#dépannage)
+
 ## Fonctionnalités
 
-- Interface de chat conversationnelle
-- Utilisation de l'API Gemini pour générer des réponses
+- Interface de chat conversationnelle interactive
+- Utilisation de l'API Gemini pour générer des réponses contextuelles
 - Consolidation automatique des données RH depuis le dossier `data`
 - Streaming des réponses en temps réel
+- Support de différents formats de documentation (Markdown, CSV, etc.)
+
+## Prérequis
+
+- Node.js (v16 ou supérieur)
+- npm ou yarn
+- Clé API Google Gemini
 
 ## Installation
 
+1. Clonez le dépôt :
+```bash
+git clone [url-du-repo]
+cd bot-rh
+```
+
+2. Installez les dépendances :
 ```bash
 npm install
+# ou avec yarn
+yarn install
 ```
 
 ## Configuration
 
-Créez un fichier `.env` à la racine du projet avec les variables suivantes :
+1. Créez un fichier `.env` à la racine du projet avec les variables suivantes :
 
 ```
 GOOGLE_API_KEY=votre_clé_api_gemini
@@ -28,19 +57,37 @@ TOP_P=0.9
 TOP_K=40
 ```
 
+2. Paramètres de configuration :
+   - `GOOGLE_API_KEY` : Votre clé API pour accéder à Gemini (obligatoire)
+   - `GEMINI_MODEL` : Modèle Gemini à utiliser (par défaut: gemini-2.0-flash-exp)
+   - `MAX_TOKENS` : Nombre maximum de tokens pour les réponses
+   - `TEMPERATURE` : Contrôle la créativité des réponses (0.0-1.0)
+   - `TOP_P` et `TOP_K` : Paramètres de sampling pour la génération de texte
+
 ## Utilisation
 
 ### Développement
 
+Pour lancer l'application en mode développement :
+
 ```bash
 npm run dev
+# ou
+yarn dev
 ```
 
+L'application sera accessible à l'adresse `http://localhost:5173` par défaut.
+
 ### Production
+
+Pour déployer en production :
 
 ```bash
 npm run build
 npm start
+# ou
+yarn build
+yarn start
 ```
 
 ### Génération du fichier de données
@@ -49,23 +96,80 @@ Le fichier `data.md` est généré automatiquement au démarrage de l'applicatio
 
 ```bash
 npm run create-data
+# ou
+yarn create-data
+```
+
+## Structure du projet
+
+```
+bot-rh/
+├── app/
+│   ├── components/       # Composants React
+│   │   └── ChatInterface.tsx
+│   ├── back/             # Logique backend
+│   │   └── ask-pholon.ts
+├── data/                 # Documentation RH source
+├── scripts/              # Scripts utilitaires
+│   └── create-data.js
+├── server.ts             # Serveur Express avec Socket.io
+├── .env                  # Variables d'environnement
+└── README.md
 ```
 
 ## Structure des données
 
 Placez vos fichiers de documentation RH dans le dossier `data`. Le script de génération prend en charge :
 
-- Fichiers Markdown (`.md`)
-- Fichiers CSV (`.csv`) - convertis en tableaux Markdown
+- Fichiers Markdown (`.md`) - utilisés directement
+- Fichiers CSV (`.csv`) - convertis automatiquement en tableaux Markdown
 - Autres types de fichiers - inclus tels quels
 
-## Architecture
+Exemple d'organisation recommandée pour le dossier `data` :
+```
+data/
+├── conges/
+│   ├── politique-conges.md
+│   └── jours-feries.csv
+├── avantages/
+│   └── mutuelle.md
+└── procedures/
+    └── onboarding.md
+```
 
-- `app/components/ChatInterface.tsx` : Interface de chat
+## Développement
+
+### Architecture
+
+- `app/components/ChatInterface.tsx` : Interface de chat utilisateur
 - `app/back/ask-pholon.ts` : Intégration avec l'API Gemini
-- `scripts/create-data.js` : Script de génération du fichier de données
-- `server.ts` : Serveur Express avec Socket.io
+- `scripts/create-data.js` : Script de génération du fichier de données consolidé
+- `server.ts` : Serveur Express avec Socket.io pour la communication en temps réel
 
-## Styling
+### Style et UI
 
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever css framework you prefer. See the [Vite docs on css](https://vitejs.dev/guide/features.html#css) for more information.
+Ce projet utilise [Tailwind CSS](https://tailwindcss.com/) pour le styling. Vous pouvez utiliser n'importe quel framework CSS de votre choix. Consultez la [documentation Vite sur le CSS](https://vitejs.dev/guide/features.html#css) pour plus d'informations.
+
+## Déploiement
+
+L'application peut être déployée sur n'importe quelle plateforme supportant Node.js :
+
+1. Construisez l'application :
+```bash
+npm run build
+```
+
+2. Démarrez le serveur :
+```bash
+npm start
+```
+
+## Dépannage
+
+### Problèmes courants
+
+- **Erreur d'API Key** : Vérifiez que votre clé API Gemini est correctement configurée dans le fichier `.env`
+- **Erreur de génération de données** : Assurez-vous que le dossier `data` existe et contient des fichiers valides
+- **Problèmes de connexion WebSocket** : Vérifiez que le serveur Express et Socket.io sont correctement configurés
+
+Pour toute autre question, veuillez consulter la documentation de l'API Gemini ou ouvrir une issue sur le dépôt du projet.

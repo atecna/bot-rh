@@ -39,7 +39,8 @@ export default function App() {
     const socket = io({
       reconnection: true,
       reconnectionAttempts: 5,
-      reconnectionDelay: 1000
+      reconnectionDelay: 1000,
+      path: '/bot-rh/socket.io'
     });
     
     socket.on('connect', () => {

@@ -35,6 +35,9 @@ const viteDevServer =
       }),
     );
 
+// Définir le chemin de base
+const BASE_PATH = '/bot-rh';
+
 const remixHandler = createRequestHandler({
   // @ts-expect-error build type mismatch with vite dev server
   build: viteDevServer
@@ -48,7 +51,9 @@ const app = express();
 const httpServer = createServer(app);
 
 // And then attach the socket.io server to the HTTP server
-const io = new Server(httpServer);
+const io = new Server(httpServer, {
+  path: `${BASE_PATH}/socket.io`,
+});
 
 // Then you can use `io` to listen the `connection` event and get a socket
 // from a client
@@ -71,23 +76,32 @@ if (viteDevServer) {
 } else {
   // Vite fingerprints its assets so we can cache forever.
   app.use(
-    "/assets",
+    `${BASE_PATH}/assets`,
     express.static("build/client/assets", { immutable: true, maxAge: "1y" }),
   );
 }
 
 // Everything else (like favicon.ico) is cached for an hour. You may want to be
 // more aggressive with this caching.
-app.use(express.static("build/client", { maxAge: "1h" }));
+app.use(BASE_PATH, express.static("build/client", { maxAge: "1h" }));
 
 app.use(morgan("tiny"));
 
 // handle SSR requests
-app.all("*", remixHandler);
+app.all(`${BASE_PATH}/*`, (req, res, next) => {
+  // Ajuster le chemin de la requête pour Remix
+  req.url = req.url.replace(BASE_PATH, '') || '/';
+  next();
+}, remixHandler);
+
+// Rediriger la racine vers le chemin de base
+app.get('/', (req, res) => {
+  res.redirect(BASE_PATH);
+});
 
 const port = process.env.PORT || 3000;
 
 // instead of running listen on the Express app, do it on the HTTP server
 httpServer.listen(port, () => {
-  console.log(`Express server listening at http://localhost:${port}`);
+  console.log(`Express server listening at http://localhost:${port}${BASE_PATH}`);
 });

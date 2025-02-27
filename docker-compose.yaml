@@ -1,8 +1,21 @@
 # docker-compose.yaml
 
 version: '3'
+
 services:
   bot-rh:
     build: .
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:3000"
+    env_file:
+      - .env
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL}
+      - MAX_TOKENS=${MAX_TOKENS}
+      - TEMPERATURE=${TEMPERATURE}
+      - TOP_P=${TOP_P}
+      - TOP_K=${TOP_K}
+    restart: unless-stopped

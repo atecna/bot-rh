@@ -9,7 +9,7 @@ declare module "@remix-run/node" {
 }
 
 export default defineConfig({
-  base: '/bot-rh/',
+  base: process.env.BASE_PATH || '/',
   plugins: [
     remix({
       future: {

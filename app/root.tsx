@@ -15,7 +15,10 @@ import packageJson from "../package.json";
 import "./tailwind.css";
 
 export const loader = async () => {
-  return { version: packageJson.version };
+  return { 
+    version: packageJson.version,
+    basePath: process.env.BASE_PATH || ''
+  };
 };
 
 export const links: LinksFunction = () => [
@@ -32,7 +35,7 @@ export const links: LinksFunction = () => [
 ];
 
 export default function App() {
-  const { version } = useLoaderData<typeof loader>();
+  const { version, basePath } = useLoaderData<typeof loader>();
   const [socket, setSocket] = useState<Socket>();
 
   useEffect(() => {
@@ -40,7 +43,7 @@ export default function App() {
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
-      path: '/bot-rh/socket.io'
+      path: basePath ? `${basePath}/socket.io` : '/socket.io'
     });
     
     socket.on('connect', () => {

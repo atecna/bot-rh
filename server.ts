@@ -7,7 +7,7 @@ import compression from "compression";
 import express from "express";
 import morgan from "morgan";
 import { Server } from "socket.io";
-import { handleSocket } from './app/back/ws.server';
+import { handleSocket } from './app/back/ws.server.js';
 import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
@@ -35,24 +35,32 @@ const viteDevServer =
       }),
     );
 
-// Définir le chemin de base
-const BASE_PATH = '/bot-rh';
+// Définir le chemin de base depuis la variable d'environnement
+const BASE_PATH = process.env.BASE_PATH || '';
 
+// Créer l'application Express principale
+const app = express();
+
+// Créer une application Express pour Remix
+const remixApp = express();
+
+// Créer le gestionnaire Remix
 const remixHandler = createRequestHandler({
   // @ts-expect-error build type mismatch with vite dev server
   build: viteDevServer
     ? () => viteDevServer.ssrLoadModule("virtual:remix/server-build")
-    : await import("./build/server/index.js"),
+    : import("./build/server/index.js"),
 });
 
-const app = express();
+// Configurer l'application Remix
+remixApp.use(remixHandler);
 
 // You need to create the HTTP server from the Express app
 const httpServer = createServer(app);
 
 // And then attach the socket.io server to the HTTP server
 const io = new Server(httpServer, {
-  path: `${BASE_PATH}/socket.io`,
+  path: BASE_PATH ? `${BASE_PATH}/socket.io` : '/socket.io',
 });
 
 // Then you can use `io` to listen the `connection` event and get a socket
@@ -70,38 +78,67 @@ app.use(compression());
 // http://expressjs.com/en/advanced/best-practice-security.html#at-a-minimum-disable-x-powered-by-header
 app.disable("x-powered-by");
 
-// handle asset requests
-if (viteDevServer) {
-  app.use(viteDevServer.middlewares);
-} else {
-  // Vite fingerprints its assets so we can cache forever.
-  app.use(
-    `${BASE_PATH}/assets`,
-    express.static("build/client/assets", { immutable: true, maxAge: "1y" }),
-  );
-}
-
-// Everything else (like favicon.ico) is cached for an hour. You may want to be
-// more aggressive with this caching.
-app.use(BASE_PATH, express.static("build/client", { maxAge: "1h" }));
-
+// Middleware de journalisation
 app.use(morgan("tiny"));
 
-// handle SSR requests
-app.all(`${BASE_PATH}/*`, (req, res, next) => {
-  // Ajuster le chemin de la requête pour Remix
-  req.url = req.url.replace(BASE_PATH, '') || '/';
+// Middleware pour déboguer les requêtes
+app.use((req, res, next) => {
+  console.log(`[DEBUG] Requête: ${req.method} ${req.url}`);
   next();
-}, remixHandler);
-
-// Rediriger la racine vers le chemin de base
-app.get('/', (req, res) => {
-  res.redirect(BASE_PATH);
 });
+
+// Configuration en fonction du chemin de base
+if (BASE_PATH && BASE_PATH !== '/') {
+  console.log(`[INFO] Application configurée avec le chemin de base: ${BASE_PATH}`);
+  
+  // En mode développement, on utilise le middleware Vite
+  if (viteDevServer) {
+    app.use(viteDevServer.middlewares);
+  }
+  
+  // Middleware pour les assets statiques en mode production
+  if (!viteDevServer) {
+    app.use(`${BASE_PATH}/assets`, express.static("build/client/assets", { immutable: true, maxAge: "1y" }));
+    app.use(BASE_PATH, express.static("build/client", { maxAge: "1h" }));
+  }
+  
+  // Rediriger la racine vers le chemin de base
+  app.get('/', (req, res) => {
+    res.redirect(BASE_PATH);
+  });
+  
+  // Monter l'application Remix sur le chemin de base
+  app.use(BASE_PATH, (req, res, next) => {
+    // Vérifier si nous sommes sur le chemin exact /bot-rh
+    if (req.url === '') {
+      // Rediriger vers /bot-rh/ avec un slash à la fin pour éviter les redirections en boucle
+      res.redirect(`${BASE_PATH}/`);
+    } else {
+      next();
+    }
+  }, remixApp);
+} else {
+  console.log('[INFO] Application configurée à la racine');
+  
+  // En mode développement, on utilise le middleware Vite
+  if (viteDevServer) {
+    app.use(viteDevServer.middlewares);
+  }
+  
+  // Middleware pour les assets statiques en mode production
+  if (!viteDevServer) {
+    app.use('/assets', express.static("build/client/assets", { immutable: true, maxAge: "1y" }));
+    app.use(express.static("build/client", { maxAge: "1h" }));
+  }
+  
+  // Monter l'application Remix à la racine
+  app.use(remixApp);
+}
 
 const port = process.env.PORT || 3000;
 
 // instead of running listen on the Express app, do it on the HTTP server
 httpServer.listen(port, () => {
-  console.log(`Express server listening at http://localhost:${port}${BASE_PATH}`);
+  const basePath = BASE_PATH || '';
+  console.log(`Express server listening at http://localhost:${port}${basePath}`);
 });

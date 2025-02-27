@@ -6,7 +6,7 @@
     "**/.server/**/*.tsx",
     "**/.client/**/*.ts",
     "**/.client/**/*.tsx"
-  ],
+, "scripts/create-data.js"  ],
   "compilerOptions": {
     "lib": [
       "DOM",

@@ -5,3 +5,5 @@ node_modules
 .env
 /public/build/*
 dist/
+data
+data.md

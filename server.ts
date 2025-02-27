@@ -7,7 +7,24 @@ import compression from "compression";
 import express from "express";
 import morgan from "morgan";
 import { Server } from "socket.io";
-import { handleSocket } from './app/back/ws.server.js';
+import { handleSocket } from './app/back/ws.server';
+import { execSync } from "child_process";
+import fs from "fs";
+import path from "path";
+
+// Création du fichier data.md au démarrage
+console.log("Création du fichier data.md...");
+try {
+  // Vérifier si le dossier scripts existe
+  if (fs.existsSync(path.join(process.cwd(), "scripts", "create-data.js"))) {
+    execSync("node scripts/create-data.js", { stdio: "inherit" });
+    console.log("Fichier data.md créé avec succès.");
+  } else {
+    console.warn("Le script create-data.js n'existe pas. Le fichier data.md ne sera pas mis à jour.");
+  }
+} catch (error) {
+  console.error("Erreur lors de la création du fichier data.md:", error);
+}
 
 const viteDevServer =
   process.env.NODE_ENV === "production"

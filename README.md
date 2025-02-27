@@ -22,10 +22,11 @@ Ce projet est un assistant RH conversationnel qui utilise l'API Gemini pour rép
 - Consolidation automatique des données RH depuis le dossier `data`
 - Streaming des réponses en temps réel
 - Support de différents formats de documentation (Markdown, CSV, etc.)
+- Historique de conversation pour des réponses contextuelles
 
 ## Prérequis
 
-- Node.js (v16 ou supérieur)
+- Node.js (v20 ou supérieur)
 - npm ou yarn
 - Clé API Google Gemini
 
@@ -63,6 +64,7 @@ TOP_K=40
    - `MAX_TOKENS` : Nombre maximum de tokens pour les réponses
    - `TEMPERATURE` : Contrôle la créativité des réponses (0.0-1.0)
    - `TOP_P` et `TOP_K` : Paramètres de sampling pour la génération de texte
+   - `DATA_PATH` : Chemin vers le fichier de données (par défaut: ./data.md)
 
 ## Utilisation
 
@@ -76,7 +78,7 @@ npm run dev
 yarn dev
 ```
 
-L'application sera accessible à l'adresse `http://localhost:5173` par défaut.
+L'application sera accessible à l'adresse `http://localhost:3000` par défaut.
 
 ### Production
 
@@ -106,14 +108,32 @@ yarn create-data
 bot-rh/
 ├── app/
 │   ├── components/       # Composants React
-│   │   └── ChatInterface.tsx
+│   │   ├── ChatInterface.tsx  # Interface principale du chat
+│   │   ├── chat/         # Sous-composants du chat
+│   │   ├── types/        # Types TypeScript
+│   │   └── utils/        # Utilitaires pour les composants
 │   ├── back/             # Logique backend
-│   │   └── ask-pholon.ts
+│   │   ├── ask-bot.ts    # Intégration avec l'API Gemini
+│   │   └── ws.server.ts  # Gestion des WebSockets
+│   ├── routes/           # Routes de l'application
+│   ├── utils/            # Utilitaires généraux
+│   ├── resources/        # Ressources statiques
+│   ├── entry.client.tsx  # Point d'entrée client
+│   ├── entry.server.tsx  # Point d'entrée serveur
+│   ├── root.tsx          # Composant racine
+│   ├── context.tsx       # Contextes React
+│   └── tailwind.css      # Styles CSS
 ├── data/                 # Documentation RH source
 ├── scripts/              # Scripts utilitaires
-│   └── create-data.js
+│   └── create-data.js    # Script de génération du fichier data.md
+├── public/               # Fichiers statiques publics
+├── build/                # Dossier de build (généré)
 ├── server.ts             # Serveur Express avec Socket.io
+├── vite.config.ts        # Configuration Vite
+├── tsconfig.json         # Configuration TypeScript
+├── tsconfig.server.json  # Configuration TypeScript pour le serveur
 ├── .env                  # Variables d'environnement
+├── Dockerfile            # Configuration Docker
 └── README.md
 ```
 
@@ -137,12 +157,21 @@ data/
     └── onboarding.md
 ```
 
+Le script `create-data.js` analyse récursivement tous les fichiers du dossier `data` et génère un fichier `data.md` consolidé qui sera utilisé par l'assistant pour répondre aux questions.
+
 ## Développement
+
+### Technologies utilisées
+
+- **Frontend** : React, Remix, Tailwind CSS
+- **Backend** : Express, Socket.io
+- **IA** : API Google Gemini
+- **Build** : Vite, TypeScript
 
 ### Architecture
 
 - `app/components/ChatInterface.tsx` : Interface de chat utilisateur
-- `app/back/ask-pholon.ts` : Intégration avec l'API Gemini
+- `app/back/ask-bot.ts` : Intégration avec l'API Gemini
 - `scripts/create-data.js` : Script de génération du fichier de données consolidé
 - `server.ts` : Serveur Express avec Socket.io pour la communication en temps réel
 
@@ -164,6 +193,18 @@ npm run build
 npm start
 ```
 
+### Déploiement avec Docker
+
+Un Dockerfile est inclus pour faciliter le déploiement :
+
+```bash
+# Construire l'image
+docker build -t bot-rh .
+
+# Exécuter le conteneur
+docker run -p 3000:3000 -e GOOGLE_API_KEY=votre_clé_api_gemini bot-rh
+```
+
 ## Dépannage
 
 ### Problèmes courants
@@ -171,5 +212,10 @@ npm start
 - **Erreur d'API Key** : Vérifiez que votre clé API Gemini est correctement configurée dans le fichier `.env`
 - **Erreur de génération de données** : Assurez-vous que le dossier `data` existe et contient des fichiers valides
 - **Problèmes de connexion WebSocket** : Vérifiez que le serveur Express et Socket.io sont correctement configurés
+- **Erreur "Module not found"** : Vérifiez que toutes les dépendances sont installées avec `npm install`
+
+### Logs
+
+Les logs du serveur peuvent être consultés dans la console lors de l'exécution. En cas de problème, vérifiez les messages d'erreur pour identifier la source du problème.
 
 Pour toute autre question, veuillez consulter la documentation de l'API Gemini ou ouvrir une issue sur le dépôt du projet.

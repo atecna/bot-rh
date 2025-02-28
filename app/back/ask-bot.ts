@@ -11,68 +11,6 @@ interface ConversationMessage {
 }
 
 /**
- * Traite le flux de réponse de l'IA
- */
-async function processResponseStream(
-  stream: AsyncIterable<{ text: () => string }>,
-  socket: Socket,
-  timer: OperationTimer
-): Promise<void> {
-  let buffer = "";
-  let chunkCount = 0;
-  let lastError = null;
-
-  try {
-    for await (const chunk of stream) {
-      chunkCount++;
-      try {
-        const chunkText = chunk.text();
-        buffer += chunkText;
-
-        // Émettre le chunk au client
-        socket.emit("stream-response", chunkText);
-      } catch (parseError) {
-        lastError = parseError;
-        timer.log(`Erreur de parsing du chunk ${chunkCount}: ${parseError}`);
-        continue;
-      }
-    }
-
-    // Vérifier si la réponse semble complète
-    const isResponseComplete =
-      buffer.trim().endsWith(".") ||
-      buffer.trim().endsWith("?") ||
-      buffer.trim().endsWith("!") ||
-      buffer.trim().endsWith(")");
-
-    // Si la réponse ne semble pas complète, envoyer un message de fin
-    if (!isResponseComplete && buffer.length > 0) {
-      socket.emit("stream-response", "...");
-    }
-
-    timer.log(`Streaming terminé. Total chunks : ${chunkCount}`);
-    socket.emit("stream-end");
-  } catch (streamError) {
-    lastError = streamError;
-    timer.log(`Erreur de streaming: ${streamError}`);
-
-    // En cas d'erreur, essayer de terminer proprement la réponse
-    if (buffer.length > 0) {
-      socket.emit("stream-response", "...");
-      socket.emit("stream-end");
-    } else {
-      socket.emit("error", "Erreur lors du streaming de la réponse.");
-    }
-  } finally {
-    // Assurer que stream-end est toujours envoyé
-    if (lastError) {
-      timer.log(`Finalisation après erreur: ${lastError}`);
-    }
-    socket.emit("stream-end");
-  }
-}
-
-/**
  * Point d'entrée principal pour les requêtes à l'assistant
  */
 export default async function askPholon(
@@ -203,19 +141,24 @@ export default async function askPholon(
     // Log pour déboguer
     timer.log(`Envoi du prompt avec ${contents.length} éléments`);
     
-    const result = await model.generateContentStream({
+    // Indiquer au client que le traitement a commencé
+    socket.emit("processing-start");
+    
+    // Générer la réponse complète (non streamée)
+    const result = await model.generateContent({
       ...prompt,
       generationConfig: CONFIG.generationConfig,
     });
-
-    // Vérifier que le stream est valide avant de le traiter
-    if (result && result.stream) {
-      await processResponseStream(result.stream, socket, timer);
-    } else {
-      throw new Error("Réponse invalide de l'API Gemini");
-    }
+    
+    const response = result.response;
+    const fullText = response.text();
+    
+    // Envoyer la réponse complète au client
+    socket.emit("complete-response", fullText);
+    
+    timer.log(`Réponse complète générée et envoyée (${fullText.length} caractères)`);
   } catch (error) {
     timer.log(`Erreur : ${error}`);
-    socket.emit("stream-error", "Erreur lors du streaming de la réponse.");
+    socket.emit("error", "Erreur lors de la génération de la réponse.");
   }
 }

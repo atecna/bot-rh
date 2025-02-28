@@ -50,10 +50,6 @@ export default function App() {
       console.log('[CLIENT] Socket connecté:', socket.id);
     });
     
-    socket.on('test', (msg) => {
-      console.log('[CLIENT] Test reçu:', msg);
-    });
-    
     socket.on('disconnect', () => {
       console.log('[CLIENT] Socket déconnecté');
     });

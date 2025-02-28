@@ -1,5 +1,5 @@
 import { useSocket } from "~/context";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { ConversationThread, Message } from "./types/chat";
 import { copyToClipboard } from "./utils/clipboard";
 import ConversationList from "./chat/ConversationList";
@@ -16,11 +16,6 @@ export default function ChatInterface() {
   const [socketStatus, setSocketStatus] = useState<string>("non connecté");
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
-  // Référence pour stocker le texte en cours de streaming
-  const streamingTextRef = useRef<string>("");
-  // ID du message en cours de streaming
-  const streamingMessageIdRef = useRef<string | null>(null);
   
   // Récupération du socket
   const socket = useSocket();
@@ -102,17 +97,19 @@ export default function ChatInterface() {
     
     // Réinitialiser l'état au changement de thread ou de socket
     setIsProcessing(false);
-    streamingTextRef.current = "";
-    streamingMessageIdRef.current = null;
     
-    // Gestion des réponses en streaming
-    socket.on("stream-response", (chunk: string) => {
-      console.log("Chunk reçu:", chunk);
+    // Gestion du début de traitement
+    socket.on("processing-start", () => {
+      console.log("Traitement commencé");
       setIsProcessing(true);
+    });
+    
+    // Gestion de la réponse complète
+    socket.on("complete-response", (response: string) => {
+      console.log("Réponse complète reçue:", response.substring(0, 50) + "...");
+      setIsProcessing(false);
       
-      // Ajouter le chunk au texte en cours
-      streamingTextRef.current += chunk;
-      
+      // Ajouter la réponse comme nouveau message
       setThreads(prev => {
         const updatedThreads = [...prev];
         const threadIndex = updatedThreads.findIndex(t => t.id === activeThreadId);
@@ -122,41 +119,13 @@ export default function ChatInterface() {
         const thread = updatedThreads[threadIndex];
         const messages = [...thread.messages];
         
-        // Si nous avons déjà un message en cours de streaming
-        if (streamingMessageIdRef.current) {
-          // Trouver l'index du message en cours
-          const messageIndex = messages.findIndex(m => m.id === streamingMessageIdRef.current);
-          
-          if (messageIndex !== -1) {
-            // Mettre à jour le message existant avec le texte complet
-            messages[messageIndex] = {
-              ...messages[messageIndex],
-              text: streamingTextRef.current
-            };
-          } else {
-            // Si le message n'existe plus (cas rare), créer un nouveau
-            const newMessageId = `assistant-${Date.now()}`;
-            streamingMessageIdRef.current = newMessageId;
-            
-            messages.push({
-              id: newMessageId,
-              text: streamingTextRef.current,
-              isUser: false,
-              timestamp: new Date()
-            });
-          }
-        } else {
-          // Créer un nouveau message pour le streaming
-          const newMessageId = `assistant-${Date.now()}`;
-          streamingMessageIdRef.current = newMessageId;
-          
-          messages.push({
-            id: newMessageId,
-            text: streamingTextRef.current,
-            isUser: false,
-            timestamp: new Date()
-          });
-        }
+        // Ajouter le message de l'assistant
+        messages.push({
+          id: `assistant-${Date.now()}`,
+          text: response,
+          isUser: false,
+          timestamp: new Date()
+        });
         
         updatedThreads[threadIndex] = {
           ...thread,
@@ -167,86 +136,11 @@ export default function ChatInterface() {
         return updatedThreads;
       });
     });
-    
-    // Fin du streaming
-    socket.on("stream-end", () => {
-      console.log("Streaming terminé");
-      setIsProcessing(false);
-      
-      // Finaliser le message avec un ID permanent
-      if (streamingMessageIdRef.current) {
-        setThreads(prev => {
-          const updatedThreads = [...prev];
-          const threadIndex = updatedThreads.findIndex(t => t.id === activeThreadId);
-          
-          if (threadIndex === -1) return prev;
-          
-          const thread = updatedThreads[threadIndex];
-          const messages = [...thread.messages];
-          
-          // Trouver l'index du message en cours
-          const messageIndex = messages.findIndex(m => m.id === streamingMessageIdRef.current);
-          
-          if (messageIndex !== -1) {
-            // Remplacer l'ID temporaire par un ID permanent
-            const permanentId = `assistant-final-${Date.now()}`;
-            messages[messageIndex] = {
-              ...messages[messageIndex],
-              id: permanentId
-            };
-          }
-          
-          updatedThreads[threadIndex] = {
-            ...thread,
-            messages,
-            updatedAt: new Date()
-          };
-          
-          return updatedThreads;
-        });
-      }
-      
-      // Réinitialiser les références
-      streamingTextRef.current = "";
-      streamingMessageIdRef.current = null;
-    });
 
     // Gestion des erreurs
     socket.on("error", (error: string) => {
       console.error("Socket error:", error);
       setIsProcessing(false);
-      
-      // Réinitialiser les références
-      streamingTextRef.current = "";
-      streamingMessageIdRef.current = null;
-      
-      if (activeThreadId) {
-        setThreads(prev => prev.map(thread => {
-          if (thread.id === activeThreadId) {
-            return {
-              ...thread,
-              messages: [...thread.messages, {
-                id: `error-${Date.now()}`,
-                text: `Erreur: ${error}`,
-                isUser: false,
-                timestamp: new Date()
-              }],
-              updatedAt: new Date()
-            };
-          }
-          return thread;
-        }));
-      }
-    });
-
-    // Gestion des erreurs de streaming
-    socket.on("stream-error", (error: string) => {
-      console.error("Stream error:", error);
-      setIsProcessing(false);
-      
-      // Réinitialiser les références
-      streamingTextRef.current = "";
-      streamingMessageIdRef.current = null;
       
       if (activeThreadId) {
         setThreads(prev => prev.map(thread => {
@@ -268,10 +162,9 @@ export default function ChatInterface() {
     });
 
     return () => {
-      socket.off("stream-response");
-      socket.off("stream-end");
+      socket.off("processing-start");
+      socket.off("complete-response");
       socket.off("error");
-      socket.off("stream-error");
     };
   }, [socket, activeThreadId]);
 

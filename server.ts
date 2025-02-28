@@ -71,21 +71,19 @@ const remixHandler = createRequestHandler({
 // Configurer l'application Remix
 remixApp.use(remixHandler);
 
-// You need to create the HTTP server from the Express app
+// Création du serveur HTTP à partir de l'application Express
 const httpServer = createServer(app);
 
-// And then attach the socket.io server to the HTTP server
+// Attachement du serveur socket.io au serveur HTTP
 const io = new Server(httpServer, {
   path: BASE_PATH ? `${BASE_PATH}/socket.io` : '/socket.io',
 });
 
-// Then you can use `io` to listen the `connection` event and get a socket
-// from a client
+// Gestion des connexions WebSocket
 io.on("connection", (socket) => {
-  // from this point you are on the WS connection with a specific client
   console.log(socket.id, "connected");
 
-  // Gestion des WebSockets pour Pholon
+  // Gestion des WebSockets
   handleSocket(socket);
 });
 
@@ -125,7 +123,7 @@ app.use(remixApp);
 
 const port = process.env.PORT || 3000;
 
-// instead of running listen on the Express app, do it on the HTTP server
+// Démarrage du serveur HTTP
 httpServer.listen(port, () => {
   const basePath = BASE_PATH || '';
   console.log(`Express server listening at http://localhost:${port}${basePath}`);

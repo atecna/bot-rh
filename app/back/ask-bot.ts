@@ -176,27 +176,44 @@ export default async function askPholon(
       // Ajouter l'historique des messages (limité aux 10 derniers messages pour éviter de dépasser les limites)
       const recentHistory = conversationHistory.slice(-10);
       recentHistory.forEach((msg) => {
-        contents.push({
-          role: msg.role,
-          parts: [{ text: msg.content }],
-        });
+        // Vérifier que le contenu du message n'est pas vide
+        if (msg.content && msg.content.trim() !== "") {
+          contents.push({
+            role: msg.role,
+            parts: [{ text: msg.content }],
+          });
+        }
       });
     }
 
     // Ajouter la question actuelle
-    contents.push({
-      role: "user",
-      parts: [{ text: rawQuestion }],
-    });
+    if (rawQuestion && rawQuestion.trim() !== "") {
+      contents.push({
+        role: "user",
+        parts: [{ text: rawQuestion }],
+      });
+    } else {
+      // Si la question est vide, envoyer une erreur au client
+      socket.emit("error", "La question ne peut pas être vide.");
+      return;
+    }
 
     const prompt = { contents };
 
+    // Log pour déboguer
+    timer.log(`Envoi du prompt avec ${contents.length} éléments`);
+    
     const result = await model.generateContentStream({
       ...prompt,
       generationConfig: CONFIG.generationConfig,
     });
 
-    await processResponseStream(result.stream, socket, timer);
+    // Vérifier que le stream est valide avant de le traiter
+    if (result && result.stream) {
+      await processResponseStream(result.stream, socket, timer);
+    } else {
+      throw new Error("Réponse invalide de l'API Gemini");
+    }
   } catch (error) {
     timer.log(`Erreur : ${error}`);
     socket.emit("stream-error", "Erreur lors du streaming de la réponse.");

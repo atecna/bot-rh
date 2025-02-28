@@ -239,10 +239,39 @@ export default function ChatInterface() {
       }
     });
 
+    // Gestion des erreurs de streaming
+    socket.on("stream-error", (error: string) => {
+      console.error("Stream error:", error);
+      setIsProcessing(false);
+      
+      // Réinitialiser les références
+      streamingTextRef.current = "";
+      streamingMessageIdRef.current = null;
+      
+      if (activeThreadId) {
+        setThreads(prev => prev.map(thread => {
+          if (thread.id === activeThreadId) {
+            return {
+              ...thread,
+              messages: [...thread.messages, {
+                id: `error-${Date.now()}`,
+                text: `Erreur: ${error}`,
+                isUser: false,
+                timestamp: new Date()
+              }],
+              updatedAt: new Date()
+            };
+          }
+          return thread;
+        }));
+      }
+    });
+
     return () => {
       socket.off("stream-response");
       socket.off("stream-end");
       socket.off("error");
+      socket.off("stream-error");
     };
   }, [socket, activeThreadId]);
 
@@ -321,7 +350,9 @@ export default function ChatInterface() {
       .map(msg => ({
         role: msg.isUser ? 'user' : 'assistant',
         content: msg.text
-      }));
+      }))
+      // Filtrer les messages vides
+      .filter(msg => msg.content && msg.content.trim() !== "");
     
     socket.emit("ask-question", inputValue, conversationHistory);
     

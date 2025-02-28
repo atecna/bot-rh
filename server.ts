@@ -1,6 +1,18 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+console.log("=== Variables d'environnement ===");
+console.log("GOOGLE_API_KEY:", process.env.GOOGLE_API_KEY);
+console.log("OPENAI_API_KEY:", process.env.OPENAI_API_KEY);
+console.log("ELEVENLABS_API_KEY:", process.env.ELEVENLABS_API_KEY);
+console.log("GEMINI_MODEL:", process.env.GEMINI_MODEL);
+console.log("MAX_TOKENS:", process.env.MAX_TOKENS);
+console.log("TEMPERATURE:", process.env.TEMPERATURE);
+console.log("TOP_P:", process.env.TOP_P);
+console.log("TOP_K:", process.env.TOP_K);
+console.log("BASE_PATH:", process.env.BASE_PATH);
+
+
 import { createServer } from "http";
 import { createRequestHandler } from "@remix-run/express";
 import compression from "compression";
@@ -49,7 +61,11 @@ const remixHandler = createRequestHandler({
   // @ts-expect-error build type mismatch with vite dev server
   build: viteDevServer
     ? () => viteDevServer.ssrLoadModule("virtual:remix/server-build")
-    : import("./build/server/index.js"),
+    : async () => {
+        // En production, on s'assure que les routes sont correctement chargées
+        const build = await import("./build/server/index.js");
+        return build;
+      },
 });
 
 // Configurer l'application Remix
@@ -98,7 +114,7 @@ if (viteDevServer) {
 // Middleware pour les assets statiques en mode production
 if (!viteDevServer) {
   app.use(
-    "/assets",
+    `${BASE_PATH}/assets`,
     express.static("build/client/assets", { immutable: true, maxAge: "1y" })
   );
   app.use(express.static("build/client", { maxAge: "1h" }));

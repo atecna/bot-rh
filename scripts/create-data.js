@@ -3,7 +3,7 @@ import path from 'path';
 import process from 'process';
 
 // Configuration
-const DATA_DIR = path.join(process.cwd(), 'data');
+const DATA_DIR = path.join(process.cwd(), 'data_notion');
 const OUTPUT_FILE = path.join(process.cwd(), 'data.md');
 
 
@@ -102,7 +102,7 @@ async function main() {
         let content = fs.readFileSync(file, 'utf-8');
         
         // Supprimer les liens Markdown
-        content = removeMarkdownLinks(content);
+        // content = removeMarkdownLinks(content);
         
         // Ajouter le contenu markdown
         markdownContent += content;

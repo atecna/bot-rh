@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.22.0",
+    "@notionhq/client": "^2.2.16",
     "@remix-run/node": "^2.16.0",
     "@remix-run/react": "^2.16.0",
     "@remix-run/serve": "^2.16.0",
@@ -21,6 +22,7 @@
     "csv-parse": "^5.6.0",
     "express": "^4.21.2",
     "isbot": "^5.1.23",
+    "notion-to-md": "^3.1.6",
     "openai": "^4.86.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -28,7 +30,8 @@
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^3.0.2",
-    "tsx": "^4.19.3"
+    "tsx": "^4.19.3",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@remix-run/dev": "^2.16.0",

@@ -79,6 +79,12 @@ const io = new Server(httpServer, {
   path: BASE_PATH ? `${BASE_PATH}/socket.io` : '/socket.io',
 });
 
+// Rendre l'instance io disponible globalement
+declare global {
+  var io: any;
+}
+global.io = io;
+
 // Gestion des connexions WebSocket
 io.on("connection", (socket) => {
   console.log(socket.id, "connected");
@@ -94,12 +100,6 @@ app.disable("x-powered-by");
 
 // Middleware de journalisation
 app.use(morgan("tiny"));
-
-// Middleware pour déboguer les requêtes
-app.use((req, res, next) => {
-  console.log(`[DEBUG] Requête: ${req.method} ${req.url}`);
-  next();
-});
 
 // Configuration en fonction du chemin de base
 console.log("[INFO] Application configurée à la racine");

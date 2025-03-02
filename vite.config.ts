@@ -9,7 +9,7 @@ declare module "@remix-run/node" {
 }
 
 export default defineConfig({
-  base: process.env.BASE_PATH || '/',
+  base: process.env.BASE_PATH + '/' || '/',
   server: {
     allowedHosts: ["innovation.atecna.fr"]
   },

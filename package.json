@@ -21,6 +21,7 @@
     "clsx": "^2.1.1",
     "csv-parse": "^5.6.0",
     "express": "^4.21.2",
+    "framer-motion": "^12.4.10",
     "isbot": "^5.1.23",
     "notion-to-md": "^3.1.6",
     "openai": "^4.86.1",

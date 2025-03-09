@@ -1,5 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import { ComponentPropsWithoutRef } from "react";
+import { motion } from "framer-motion";
 
 export interface MessageProps {
   id: string;
@@ -12,7 +13,10 @@ export interface MessageProps {
 
 export default function Message({ id, text, isUser, timestamp, onCopy, isCopied }: MessageProps) {
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
       className={`last:mb-0 group ${
         isUser ? "" : "py-6 -mx-4 px-4"
       }`}
@@ -20,7 +24,8 @@ export default function Message({ id, text, isUser, timestamp, onCopy, isCopied 
       <div className="max-w-3xl mx-auto">
         {/* Contenu du message */}
         <div className={`relative ${isUser ? "flex justify-end" : ""}`}>
-          <div
+          <motion.div
+            whileHover={{ scale: 1.01 }}
             className={`${
               isUser
                 ? "bg-atecna-vert-fonce text-white py-3 px-4 rounded-2xl max-w-[85%]"
@@ -153,7 +158,7 @@ export default function Message({ id, text, isUser, timestamp, onCopy, isCopied 
                 </ReactMarkdown>
               </div>
             )}
-          </div>
+          </motion.div>
         </div>
 
         {/* Bouton de copie en bas du message */}
@@ -208,6 +213,6 @@ export default function Message({ id, text, isUser, timestamp, onCopy, isCopied 
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 } 

@@ -197,21 +197,6 @@ export default function ChatInterface() {
       return;
     }
 
-    // Créer un nouveau thread si aucun n'est actif
-    if (!activeThreadId) {
-      const newThreadId = `thread-${Date.now()}`;
-      const newThread: ConversationThread = {
-        id: newThreadId,
-        title: inputValue.length > 30 ? inputValue.substring(0, 30) + '...' : inputValue,
-        messages: [],
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      
-      setThreads(prev => [...prev, newThread]);
-      setActiveThreadId(newThreadId);
-    }
-
     // Créer le message utilisateur
     const userMessage: Message = {
       id: `user-${Date.now()}`,
@@ -219,35 +204,71 @@ export default function ChatInterface() {
       isUser: true,
       timestamp: new Date()
     };
-    
-    // Mettre à jour le thread actif avec le nouveau message
-    setThreads(prev => prev.map(thread => {
-      if (thread.id === activeThreadId) {
-        // Si c'est le premier message, mettre à jour le titre
-        if (thread.messages.length === 0) {
-          thread.title = inputValue.length > 30 ? inputValue.substring(0, 30) + '...' : inputValue;
-        }
+
+    let threadToUse = activeThreadId;
+
+    // Créer un nouveau thread si aucun n'est actif
+    if (!activeThreadId) {
+      const newThreadId = `thread-${Date.now()}`;
+      const newThread: ConversationThread = {
+        id: newThreadId,
+        title: inputValue.length > 30 ? inputValue.substring(0, 30) + '...' : inputValue,
+        messages: [userMessage], // Inclure directement le message utilisateur
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      setThreads(prev => [...prev, newThread]);
+      setActiveThreadId(newThreadId);
+      threadToUse = newThreadId;
+    } else {
+      // Mettre à jour le thread actif avec le nouveau message
+      setThreads(prev => {
+        const updatedThreads = prev.map(thread => {
+          if (thread.id === activeThreadId) {
+            // Si c'est le premier message, mettre à jour le titre
+            if (thread.messages.length === 0) {
+              thread.title = inputValue.length > 30 ? inputValue.substring(0, 30) + '...' : inputValue;
+            }
+            
+            return {
+              ...thread,
+              messages: [...thread.messages, userMessage],
+              updatedAt: new Date()
+            };
+          }
+          return thread;
+        });
         
-        return {
-          ...thread,
-          messages: [...thread.messages, userMessage],
-          updatedAt: new Date()
-        };
+        return updatedThreads;
+      });
+    }
+
+    // Récupérer l'historique des messages pour l'envoi au serveur
+    // Utiliser une fonction pour obtenir l'historique à jour
+    const getConversationHistory = () => {
+      // Pour un nouveau thread, on n'a que le message actuel
+      if (!activeThreadId) {
+        return [{
+          role: 'user',
+          content: inputValue
+        }];
       }
-      return thread;
-    }));
+      
+      // Pour un thread existant, on récupère tous les messages
+      const thread = threads.find(t => t.id === activeThreadId);
+      if (!thread) return [{ role: 'user', content: inputValue }];
+      
+      return [...thread.messages, userMessage]
+        .map(msg => ({
+          role: msg.isUser ? 'user' : 'assistant',
+          content: msg.text
+        }))
+        .filter(msg => msg.content && msg.content.trim() !== "");
+    };
     
-    // Envoyer au serveur avec l'historique des messages du thread actif
-    const currentMessages = activeMessages();
-    const conversationHistory = [...currentMessages, userMessage]
-      .map(msg => ({
-        role: msg.isUser ? 'user' : 'assistant',
-        content: msg.text
-      }))
-      // Filtrer les messages vides
-      .filter(msg => msg.content && msg.content.trim() !== "");
-    
-    socket.emit("ask-question", inputValue, conversationHistory);
+    // Un seul appel au serveur avec l'historique approprié
+    socket.emit("ask-question", inputValue, getConversationHistory());
     
     // Réinitialiser l'input
     setInputValue("");

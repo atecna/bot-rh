@@ -42,6 +42,24 @@
   }
 }
 
+/* Classes d'animation personnalisées */
+@layer utilities {
+  .animation-delay-200 {
+    animation-delay: 0.2s;
+  }
+  .animation-delay-400 {
+    animation-delay: 0.4s;
+  }
+  .animation-delay-600 {
+    animation-delay: 0.6s;
+  }
+  
+  /* Transition douce pour tous les éléments animés */
+  .transition-all-smooth {
+    transition: all 0.3s ease-in-out;
+  }
+}
+
 html,
 body {
   -webkit-user-select: none;

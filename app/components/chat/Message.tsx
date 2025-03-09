@@ -1,6 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import { ComponentPropsWithoutRef } from "react";
 import { motion } from "framer-motion";
+import remarkGfm from "remark-gfm";
 
 export interface MessageProps {
   id: string;
@@ -37,6 +38,7 @@ export default function Message({ id, text, isUser, timestamp, onCopy, isCopied 
             ) : (
               <div className="markdown-content prose prose-sm max-w-none select-text">
                 <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
                   components={{
                     a: ({ ...props }) => (
                       <a
@@ -131,7 +133,7 @@ export default function Message({ id, text, isUser, timestamp, onCopy, isCopied 
                     table: ({ ...props }) => (
                       <table
                         {...props}
-                        className="border-collapse border border-gray-200 my-3 w-full"
+                        className="border-collapse border border-gray-200 my-3 w-full table-auto"
                       >
                         {props.children}
                       </table>
@@ -139,7 +141,7 @@ export default function Message({ id, text, isUser, timestamp, onCopy, isCopied 
                     th: ({ ...props }) => (
                       <th
                         {...props}
-                        className="border border-gray-200 px-4 py-2 bg-gray-100"
+                        className="border border-gray-200 px-4 py-2 bg-gray-100 font-semibold text-left"
                       >
                         {props.children}
                       </th>
@@ -147,7 +149,7 @@ export default function Message({ id, text, isUser, timestamp, onCopy, isCopied 
                     td: ({ ...props }) => (
                       <td
                         {...props}
-                        className="border border-gray-200 px-4 py-2"
+                        className="border border-gray-200 px-4 py-2 break-words"
                       >
                         {props.children}
                       </td>

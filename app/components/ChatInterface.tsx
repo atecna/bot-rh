@@ -93,7 +93,12 @@ export default function ChatInterface() {
 
   // Effet pour écouter les événements socket
   useEffect(() => {
-    if (!socket || !activeThreadId) return;
+    if (!socket) {
+      console.log("Pas de socket disponible pour écouter les événements");
+      return;
+    }
+    
+    console.log("Configuration des écouteurs d'événements socket pour le thread:", activeThreadId);
     
     // Réinitialiser l'état au changement de thread ou de socket
     setIsProcessing(false);
@@ -114,7 +119,10 @@ export default function ChatInterface() {
         const updatedThreads = [...prev];
         const threadIndex = updatedThreads.findIndex(t => t.id === activeThreadId);
         
-        if (threadIndex === -1) return prev;
+        if (threadIndex === -1) {
+          console.error("Thread non trouvé pour la réponse:", activeThreadId);
+          return prev;
+        }
         
         const thread = updatedThreads[threadIndex];
         const messages = [...thread.messages];
@@ -160,8 +168,10 @@ export default function ChatInterface() {
         }));
       }
     });
-
+    
+    // Nettoyage des écouteurs à la désinscription
     return () => {
+      console.log("Nettoyage des écouteurs d'événements socket");
       socket.off("processing-start");
       socket.off("complete-response");
       socket.off("error");
@@ -228,9 +238,13 @@ export default function ChatInterface() {
           if (thread.id === activeThreadId) {
             // Si c'est le premier message, mettre à jour le titre
             if (thread.messages.length === 0) {
-              thread.title = inputValue.length > 30 ? inputValue.substring(0, 30) + '...' : inputValue;
+              return {
+                ...thread,
+                title: inputValue.length > 30 ? inputValue.substring(0, 30) + '...' : inputValue,
+                messages: [...thread.messages, userMessage],
+                updatedAt: new Date()
+              };
             }
-            
             return {
               ...thread,
               messages: [...thread.messages, userMessage],
@@ -239,39 +253,35 @@ export default function ChatInterface() {
           }
           return thread;
         });
-        
         return updatedThreads;
       });
     }
 
-    // Récupérer l'historique des messages pour l'envoi au serveur
-    // Utiliser une fonction pour obtenir l'historique à jour
-    const getConversationHistory = () => {
-      // Pour un nouveau thread, on n'a que le message actuel
-      if (!activeThreadId) {
-        return [{
-          role: 'user',
-          content: inputValue
-        }];
-      }
-      
-      // Pour un thread existant, on récupère tous les messages
-      const thread = threads.find(t => t.id === activeThreadId);
-      if (!thread) return [{ role: 'user', content: inputValue }];
-      
-      return [...thread.messages, userMessage]
-        .map(msg => ({
-          role: msg.isUser ? 'user' : 'assistant',
-          content: msg.text
-        }))
-        .filter(msg => msg.content && msg.content.trim() !== "");
-    };
-    
-    // Un seul appel au serveur avec l'historique approprié
-    socket.emit("ask-question", inputValue, getConversationHistory());
-    
-    // Réinitialiser l'input
+    // Réinitialiser l'input et définir l'état de traitement
     setInputValue("");
+    setIsProcessing(true);
+
+    // Récupérer l'historique de conversation pour le contexte
+    const history = getConversationHistory();
+
+    // Envoyer la requête au serveur
+    console.log("Envoi au serveur:", { message: userMessage.text, history });
+    socket.emit("ask-question", userMessage.text, history);
+  };
+
+  // Fonction pour récupérer l'historique de conversation
+  const getConversationHistory = () => {
+    if (!activeThreadId) {
+      return [{ role: 'user', content: inputValue }];
+    }
+    
+    const thread = threads.find(t => t.id === activeThreadId);
+    if (!thread) return [{ role: 'user', content: inputValue }];
+    
+    return thread.messages.map(msg => ({
+      role: msg.isUser ? 'user' : 'assistant',
+      content: msg.text
+    }));
   };
 
   // Gérer la soumission du formulaire
@@ -313,6 +323,79 @@ export default function ChatInterface() {
     return thread ? thread.title : "Conversation";
   };
 
+  // Fonction pour gérer les clics sur les starters de conversation
+  const handleStarterClick = (text: string) => {
+    if (!socket) {
+      console.log("Socket non disponible");
+      return;
+    }
+
+    // Créer le message utilisateur
+    const userMessage: Message = {
+      id: `user-${Date.now()}`,
+      text: text,
+      isUser: true,
+      timestamp: new Date()
+    };
+
+    let threadToUse = activeThreadId;
+
+    // Si aucun thread actif, en créer un nouveau
+    if (!activeThreadId) {
+      const newThreadId = `thread-${Date.now()}`;
+      const newThread: ConversationThread = {
+        id: newThreadId,
+        title: text.length > 30 ? text.substring(0, 30) + '...' : text,
+        messages: [userMessage],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      setThreads(prev => [...prev, newThread]);
+      setActiveThreadId(newThreadId);
+      threadToUse = newThreadId;
+    } else {
+      // Utiliser le thread actif et y ajouter le message
+      setThreads(prev => {
+        return prev.map(thread => {
+          if (thread.id === activeThreadId) {
+            // Si c'est le premier message, mettre à jour le titre
+            if (thread.messages.length === 0) {
+              return {
+                ...thread,
+                title: text.length > 30 ? text.substring(0, 30) + '...' : text,
+                messages: [...thread.messages, userMessage],
+                updatedAt: new Date()
+              };
+            }
+            return {
+              ...thread,
+              messages: [...thread.messages, userMessage],
+              updatedAt: new Date()
+            };
+          }
+          return thread;
+        });
+      });
+    }
+
+    // Réinitialiser l'input et définir l'état de traitement
+    setInputValue("");
+    setIsProcessing(true);
+    
+    // Préparer l'historique de conversation
+    const history = threadToUse === activeThreadId && activeThreadId !== null
+      ? [...activeMessages().map(msg => ({
+          role: msg.isUser ? 'user' : 'assistant',
+          content: msg.text
+        })), { role: 'user', content: text }]
+      : [{ role: 'user', content: text }];
+    
+    // Envoyer la requête au serveur
+    console.log("Envoi au serveur:", { message: text, history });
+    socket.emit("ask-question", text, history);
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar - masqué sur mobile */}
@@ -320,10 +403,9 @@ export default function ChatInterface() {
         <ConversationList 
           threads={threads}
           activeThreadId={activeThreadId}
-          setActiveThreadId={setActiveThreadId}
-          createNewThread={createNewThread}
-          clearThreads={clearThreads}
-          socketStatus={socketStatus}
+          onSelectThread={setActiveThreadId}
+          onCreateThread={createNewThread}
+          onClearThreads={clearThreads}
         />
       </div>
       
@@ -341,9 +423,9 @@ export default function ChatInterface() {
             <ConversationList 
               threads={threads}
               activeThreadId={activeThreadId}
-              setActiveThreadId={setActiveThreadId}
-              createNewThread={createNewThread}
-              clearThreads={clearThreads}
+              onSelectThread={setActiveThreadId}
+              onCreateThread={createNewThread}
+              onClearThreads={clearThreads}
               isMobile={true}
               onClose={() => setIsMobileMenuOpen(false)}
             />
@@ -358,10 +440,8 @@ export default function ChatInterface() {
           <ConversationHeader 
             title={getActiveThreadTitle()}
             socketStatus={socketStatus}
+            onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             isMobile={true}
-            onMenuOpen={() => setIsMobileMenuOpen(true)}
-            onNewThread={createNewThread}
-            onClearThreads={clearThreads}
           />
         </div>
         
@@ -370,6 +450,7 @@ export default function ChatInterface() {
           messages={activeMessages()}
           copiedMessageId={copiedMessageId}
           onCopyMessage={handleCopyMessage}
+          onStarterClick={handleStarterClick}
         />
         
         {/* Zone de saisie flottante */}

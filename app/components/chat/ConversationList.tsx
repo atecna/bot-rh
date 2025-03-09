@@ -4,40 +4,38 @@ import { motion, AnimatePresence } from "framer-motion";
 interface ConversationListProps {
   threads: ConversationThread[];
   activeThreadId: string | null;
-  setActiveThreadId: (id: string) => void;
-  createNewThread: () => void;
-  clearThreads: () => void;
+  onSelectThread: (id: string) => void;
+  onCreateThread: () => void;
+  onClearThreads: () => void;
   isMobile?: boolean;
   onClose?: () => void;
-  socketStatus?: string;
 }
 
 export default function ConversationList({
   threads,
   activeThreadId,
-  setActiveThreadId,
-  createNewThread,
-  clearThreads,
+  onSelectThread,
+  onCreateThread,
+  onClearThreads,
   isMobile = false,
-  onClose,
-  socketStatus = "non connecté"
+  onClose
 }: ConversationListProps) {
   const handleThreadClick = (threadId: string) => {
-    setActiveThreadId(threadId);
+    onSelectThread(threadId);
     if (isMobile && onClose) {
       onClose();
     }
   };
 
   const handleNewThread = () => {
-    createNewThread();
+    onCreateThread();
     if (isMobile && onClose) {
       onClose();
     }
   };
 
   const handleClearThreads = () => {
-    clearThreads();
+    onClearThreads();
     if (isMobile && onClose) {
       onClose();
     }

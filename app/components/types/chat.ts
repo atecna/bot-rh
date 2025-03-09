@@ -16,8 +16,6 @@ export interface ConversationThread {
 export interface ConversationHeaderProps {
   title: string;
   socketStatus: string;
-  isMobile: boolean;
-  onMenuOpen: () => void;
-  onNewThread: () => void;
-  onClearThreads: () => void;
+  onMenuToggle: () => void;
+  isMobile?: boolean;
 } 

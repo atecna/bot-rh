@@ -7,9 +7,10 @@ interface MessageListProps {
   messages: MessageType[];
   copiedMessageId: string | null;
   onCopyMessage: (id: string) => void;
+  onStarterClick?: (text: string) => void;
 }
 
-export default function MessageList({ messages, copiedMessageId, onCopyMessage }: MessageListProps) {
+export default function MessageList({ messages, copiedMessageId, onCopyMessage, onStarterClick }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Effet pour le scroll automatique vers le bas
@@ -58,10 +59,45 @@ export default function MessageList({ messages, copiedMessageId, onCopyMessage }
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.5 }}
-            className="text-sm text-gray-500 max-w-md mx-auto"
+            className="text-sm text-gray-500 max-w-md mx-auto mb-6"
           >
             Je suis votre assistant RH. Posez-moi des questions sur les congés, les procédures internes ou toute autre information RH.
           </motion.p>
+          
+          {/* Starters de conversation */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+            className="flex flex-col gap-3 max-w-md mx-auto"
+          >
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => onStarterClick?.("Comment poser des congés payés ?")}
+              className="py-3 px-4 bg-white rounded-xl shadow-sm border border-gray-200 text-left hover:border-atecna-corail transition-colors"
+            >
+              <span className="text-atecna-vert-fonce font-medium">Comment poser des congés payés ?</span>
+            </motion.button>
+            
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => onStarterClick?.("Quelles sont les procédures pour le télétravail ?")}
+              className="py-3 px-4 bg-white rounded-xl shadow-sm border border-gray-200 text-left hover:border-atecna-corail transition-colors"
+            >
+              <span className="text-atecna-vert-fonce font-medium">Quelles sont les procédures pour le télétravail ?</span>
+            </motion.button>
+            
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => onStarterClick?.("Comment fonctionne la mutuelle d'entreprise ?")}
+              className="py-3 px-4 bg-white rounded-xl shadow-sm border border-gray-200 text-left hover:border-atecna-corail transition-colors"
+            >
+              <span className="text-atecna-vert-fonce font-medium">Comment fonctionne la mutuelle d'entreprise ?</span>
+            </motion.button>
+          </motion.div>
         </motion.div>
       </motion.div>
     );

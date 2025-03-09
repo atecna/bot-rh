@@ -4,12 +4,10 @@ import { motion } from "framer-motion";
 export default function ConversationHeader({
   title,
   socketStatus,
-  isMobile,
-  onMenuOpen,
-  onNewThread,
-  onClearThreads
+  onMenuToggle,
+  isMobile = false
 }: ConversationHeaderProps) {
-  // Version mobile simplifiée - uniquement pour le burger menu
+  // Version mobile simplifiée
   if (isMobile) {
     return (
       <motion.div 
@@ -19,7 +17,7 @@ export default function ConversationHeader({
         className="bg-white text-black py-3 px-4 flex justify-between items-center border-b border-gray-100"
       >
         <motion.button 
-          onClick={onMenuOpen}
+          onClick={onMenuToggle}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           className="text-atecna-corail hover:text-atecna-corail/90 transition-colors"
@@ -29,6 +27,7 @@ export default function ConversationHeader({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </motion.button>
+        
         <motion.h1 
           initial={{ scale: 0.95 }}
           animate={{ scale: 1 }}
@@ -37,18 +36,13 @@ export default function ConversationHeader({
         >
           {title}
         </motion.h1>
-        <motion.button 
-          onClick={onNewThread}
-          whileHover={{ scale: 1.1, rotate: 90 }}
-          whileTap={{ scale: 0.9 }}
-          transition={{ duration: 0.2 }}
-          className="text-atecna-bleu hover:text-atecna-bleu/90 transition-colors"
-          title="Nouvelle conversation"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-        </motion.button>
+        
+        <div className="flex items-center">
+          <div className={`w-2 h-2 rounded-full mr-1 ${
+            socketStatus === "connecté" ? "bg-green-500" : "bg-red-500"
+          }`}></div>
+          <span className="text-xs text-gray-500">{socketStatus}</span>
+        </div>
       </motion.div>
     );
   }

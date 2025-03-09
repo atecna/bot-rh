@@ -3,7 +3,7 @@ import path from 'path';
 import process from 'process';
 
 // Configuration
-const DATA_DIR = path.join(process.cwd(), 'data_notion');
+const DATA_DIR = path.join(process.cwd(), 'data');
 const OUTPUT_FILE = path.join(process.cwd(), 'data.md');
 
 
@@ -38,9 +38,22 @@ function readFilesRecursively(dir, result = []) {
 function removeMarkdownLinks(markdownContent) {
   // Regex pour trouver les liens Markdown de type [texte](url)
   const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-  
+
   // Remplacer les liens par leur texte uniquement
   return markdownContent.replace(linkRegex, '$1');
+}
+
+/**
+ * Supprime les images encodées en base64 du contenu Markdown
+ * @param {string} markdownContent - Contenu Markdown à traiter
+ * @returns {string} - Contenu Markdown sans images base64
+ */
+function removeBase64Images(markdownContent) {
+  // Regex pour trouver les images encodées en base64
+  const base64ImageRegex = /\[.*?\]\(data:image\/[^;]+;base64,[^)]+\)/g;
+
+  // Supprimer complètement les images base64
+  return markdownContent.replace(base64ImageRegex, '');
 }
 
 /**
@@ -78,17 +91,17 @@ async function main() {
     for (const file of files) {
       // Ignorer les fichiers cachés et .DS_Store
       if (path.basename(file).startsWith('.')) continue;
-      
+
       // Ignorer les fichiers CSV
       const ext = path.extname(file).toLowerCase();
       if (ext === '.csv') continue;
-      
+
       // Ne traiter que les fichiers markdown
       if (ext !== '.md') continue;
 
       // Obtenir le chemin relatif pour l'affichage
       const relativePath = path.relative(DATA_DIR, file);
-      
+
       // Extraire l'UUID et créer un lien Notion si disponible
       const uuid = extractNotionUUID(relativePath);
       if (uuid) {
@@ -100,10 +113,13 @@ async function main() {
       try {
         // Lire le contenu du fichier
         let content = fs.readFileSync(file, 'utf-8');
-        
+
+        // Supprimer les images encodées en base64
+        content = removeBase64Images(content);
+
         // Supprimer les liens Markdown
-        // content = removeMarkdownLinks(content);
-        
+        content = removeMarkdownLinks(content);
+
         // Ajouter le contenu markdown
         markdownContent += content;
       } catch (fileError) {

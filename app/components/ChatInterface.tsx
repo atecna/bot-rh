@@ -293,9 +293,9 @@ export default function ChatInterface() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-full mx-auto bg-white shadow-xl overflow-hidden md:flex-row">
-      {/* Sidebar pour desktop */}
-      <div className="hidden md:flex md:flex-col md:w-64 bg-atecna-rose border-r border-atecna-corail/20">
+    <div className="flex h-screen bg-gray-50">
+      {/* Sidebar - masqué sur mobile */}
+      <div className="hidden md:block md:w-64 lg:w-80 shrink-0">
         <ConversationList 
           threads={threads}
           activeThreadId={activeThreadId}
@@ -314,7 +314,7 @@ export default function ChatInterface() {
           aria-modal="true"
         >
           <div 
-            className="absolute top-0 left-0 w-3/4 h-full bg-atecna-rose overflow-y-auto" 
+            className="absolute top-0 left-0 w-3/4 h-full overflow-y-auto" 
             role="document"
           >
             <ConversationList 
@@ -331,16 +331,18 @@ export default function ChatInterface() {
       )}
       
       {/* Contenu principal */}
-      <div className="flex flex-col justify-between flex-1 max-w-full h-full">
-        {/* En-tête */}
-        <ConversationHeader 
-          title={getActiveThreadTitle()}
-          socketStatus={socketStatus}
-          isMobile={true}
-          onMenuOpen={() => setIsMobileMenuOpen(true)}
-          onNewThread={createNewThread}
-          onClearThreads={clearThreads}
-        />
+      <div className="flex flex-col flex-1 h-full overflow-hidden relative">
+        {/* En-tête - uniquement sur mobile */}
+        <div className="md:hidden">
+          <ConversationHeader 
+            title={getActiveThreadTitle()}
+            socketStatus={socketStatus}
+            isMobile={true}
+            onMenuOpen={() => setIsMobileMenuOpen(true)}
+            onNewThread={createNewThread}
+            onClearThreads={clearThreads}
+          />
+        </div>
         
         {/* Zone des messages */}
         <MessageList 
@@ -349,15 +351,17 @@ export default function ChatInterface() {
           onCopyMessage={handleCopyMessage}
         />
         
-        {/* Zone de saisie */}
-        <MessageInput 
-          inputValue={inputValue}
-          setInputValue={setInputValue}
-          handleSubmit={handleSubmit}
-          handleKeyDown={handleKeyDown}
-          handleButtonClick={handleButtonClick}
-          isProcessing={isProcessing}
-        />
+        {/* Zone de saisie flottante */}
+        <div className="absolute bottom-0 left-0 right-0 pointer-events-none pb-4">
+          <MessageInput 
+            inputValue={inputValue}
+            setInputValue={setInputValue}
+            handleSubmit={handleSubmit}
+            handleKeyDown={handleKeyDown}
+            handleButtonClick={handleButtonClick}
+            isProcessing={isProcessing}
+          />
+        </div>
       </div>
     </div>
   );

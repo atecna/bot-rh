@@ -20,7 +20,7 @@ export default defineConfig({
         v3_relativeSplatPath: true,
         v3_throwAbortReason: true,
         v3_singleFetch: true,
-        // v3_lazyRouteDiscovery: true, // Désactivé car cause des erreurs en production
+        v3_lazyRouteDiscovery: true,
       },
       basename: process.env.BASE_PATH || '/',
     }),

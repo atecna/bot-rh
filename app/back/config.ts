@@ -23,8 +23,12 @@ export const MICROSOFT_CONFIG = {
   clientId: process.env.MICROSOFT_CLIENT_ID || "",
   tenantId: process.env.MICROSOFT_TENANT_ID || "",
   clientSecret: process.env.MICROSOFT_CLIENT_SECRET || "",
-  redirectUri: process.env.REDIRECT_URI || `http://localhost:${PORT}${BASE_PATH}/auth/microsoft/callback`,
-  postLogoutRedirectUri: `http://localhost:${PORT}${BASE_PATH}`,
+  redirectUri:
+    process.env.MICROSOFT_REDIRECT_URI ||
+    `http://localhost:${PORT}${BASE_PATH}/auth/microsoft/callback`,
+  postLogoutRedirectUri:
+    process.env.MICROSOFT_POST_LOGOUT_REDIRECT_URI ||
+    `http://localhost:${PORT}${BASE_PATH}`,
   scopes: ["User.Read"],
 };
 

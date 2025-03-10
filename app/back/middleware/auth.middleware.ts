@@ -49,7 +49,8 @@ export const authMiddleware = async (
     referer: req.headers.referer,
     'user-agent': req.headers['user-agent'],
     'x-forwarded-for': req.headers['x-forwarded-for'],
-    'x-forwarded-proto': req.headers['x-forwarded-proto']
+    'x-forwarded-proto': req.headers['x-forwarded-proto'],
+    'cookie': req.headers.cookie
   });
   
   // Vérifier si le protocole est HTTPS en production
@@ -62,10 +63,10 @@ export const authMiddleware = async (
   }
   
   console.log(`[AUTH_MIDDLEWARE] État de la session:`, {
-    isAuthenticated: req.session.isAuthenticated,
-    hasAccessToken: !!req.session.accessToken,
-    hasRefreshToken: !!req.session.refreshToken,
-    tokenExpires: req.session.tokenExpires ? new Date(req.session.tokenExpires).toISOString() : null,
+    isAuthenticated: req.session?.isAuthenticated,
+    hasAccessToken: !!req.session?.accessToken,
+    hasRefreshToken: !!req.session?.refreshToken,
+    tokenExpires: req.session?.tokenExpires ? new Date(req.session.tokenExpires).toISOString() : null,
     currentTime: new Date().toISOString(),
     sessionID: req.sessionID
   });
@@ -76,7 +77,7 @@ export const authMiddleware = async (
   }
 
   // Vérifier si l'utilisateur est authentifié
-  if (req.session.isAuthenticated) {
+  if (req.session?.isAuthenticated) {
     console.log(`[AUTH_MIDDLEWARE] Utilisateur authentifié, vérification de la validité du token`);
     
     // Vérifier si le token d'accès est toujours valide
@@ -104,5 +105,16 @@ export const authMiddleware = async (
 
   // Rediriger vers la page de connexion si non authentifié
   console.log(`[AUTH_MIDDLEWARE] Redirection vers ${BASE_PATH}/auth/login`);
-  res.redirect(`${BASE_PATH}/auth/login`);
+  
+  // Forcer la sauvegarde de la session avant la redirection
+  if (req.session) {
+    req.session.save((err) => {
+      if (err) {
+        console.error("[AUTH_MIDDLEWARE] Erreur lors de la sauvegarde de la session:", err);
+      }
+      res.redirect(`${BASE_PATH}/auth/login`);
+    });
+  } else {
+    res.redirect(`${BASE_PATH}/auth/login`);
+  }
 }; 

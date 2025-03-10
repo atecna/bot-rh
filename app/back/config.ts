@@ -17,6 +17,7 @@ export const NODE_ENV = process.env.NODE_ENV || "development";
 export const BASE_PATH = process.env.BASE_PATH || "";
 export const IS_PRODUCTION = NODE_ENV === "production";
 export const SESSION_SECRET = process.env.SESSION_SECRET || "votre_secret_de_session";
+export const DOMAIN = process.env.DOMAIN || "innovation.atecna.fr";
 
 // Configuration Microsoft Authentication
 export const MICROSOFT_CONFIG = {
@@ -56,12 +57,14 @@ export const SESSION_CONFIG = {
   resave: true,
   saveUninitialized: true,
   name: "bot-rh.sid",
+  proxy: true,
   cookie: {
     secure: IS_PRODUCTION,
     httpOnly: true,
     sameSite: IS_PRODUCTION ? 'none' as const : 'lax' as const,
     maxAge: 24 * 60 * 60 * 1000,
     path: BASE_PATH || '/',
+    domain: IS_PRODUCTION ? DOMAIN : undefined,
   },
 };
 
@@ -78,7 +81,8 @@ console.log("[CONFIG] Environnement:", {
   NODE_ENV,
   IS_PRODUCTION,
   PORT,
-  BASE_PATH
+  BASE_PATH,
+  DOMAIN
 });
 
 console.log("[CONFIG] Configuration Microsoft:", {
@@ -95,8 +99,10 @@ console.log("[CONFIG] Configuration des sessions:", {
   httpOnly: SESSION_CONFIG.cookie.httpOnly,
   sameSite: SESSION_CONFIG.cookie.sameSite,
   path: SESSION_CONFIG.cookie.path,
+  domain: SESSION_CONFIG.cookie.domain,
   maxAge: SESSION_CONFIG.cookie.maxAge / (60 * 60 * 1000) + " heures",
-  name: SESSION_CONFIG.name
+  name: SESSION_CONFIG.name,
+  proxy: SESSION_CONFIG.proxy
 });
 
 // Vérifier la configuration Microsoft

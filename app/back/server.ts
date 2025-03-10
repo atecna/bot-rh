@@ -90,6 +90,9 @@ async function startServer() {
   // Créer l'application Express principale
   const app = express();
   
+  // Configuration pour le proxy inverse
+  app.set('trust proxy', 1);
+  
   // Configuration des middlewares de base
   app.use(compression());
   app.disable("x-powered-by");
@@ -102,6 +105,12 @@ async function startServer() {
   // avec des logs supplémentaires pour le débogage
   const sessionMiddleware = session(SESSION_CONFIG);
 
+  // Ajouter un middleware pour logger les cookies
+  app.use((req, res, next) => {
+    console.log(`[COOKIE_DEBUG] Cookies reçus pour ${req.path}:`, req.headers.cookie);
+    next();
+  });
+  
   // Ajouter un middleware pour logger les sessions
   app.use((req, res, next) => {
     const originalSend = res.send;

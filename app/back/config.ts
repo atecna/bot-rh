@@ -42,10 +42,10 @@ export const MSAL_CONFIG = {
   system: {
     loggerOptions: {
       loggerCallback(loglevel: LogLevel, message: string) {
-        console.log(message);
+        console.log(`[MSAL] ${message}`);
       },
       piiLoggingEnabled: false,
-      logLevel: LogLevel.Info,
+      logLevel: LogLevel.Verbose, // Augmenter le niveau de log pour MSAL
     },
   },
 };
@@ -68,4 +68,27 @@ export const SOCKET_IO_CONFIG = {
 };
 
 // URLs d'authentification Microsoft
-export const MICROSOFT_LOGOUT_URL = `https://login.microsoftonline.com/${MICROSOFT_CONFIG.tenantId}/oauth2/v2.0/logout?post_logout_redirect_uri=`; 
+export const MICROSOFT_LOGOUT_URL = `https://login.microsoftonline.com/${MICROSOFT_CONFIG.tenantId}/oauth2/v2.0/logout?post_logout_redirect_uri=`;
+
+// Afficher les informations de configuration au démarrage
+console.log("[CONFIG] Environnement:", {
+  NODE_ENV,
+  IS_PRODUCTION,
+  PORT,
+  BASE_PATH
+});
+
+console.log("[CONFIG] Configuration Microsoft:", {
+  clientId: MICROSOFT_CONFIG.clientId ? "défini" : "non défini",
+  tenantId: MICROSOFT_CONFIG.tenantId ? "défini" : "non défini",
+  clientSecret: MICROSOFT_CONFIG.clientSecret ? "défini" : "non défini",
+  redirectUri: MICROSOFT_CONFIG.redirectUri,
+  postLogoutRedirectUri: MICROSOFT_CONFIG.postLogoutRedirectUri,
+  scopes: MICROSOFT_CONFIG.scopes
+});
+
+console.log("[CONFIG] Configuration des sessions:", {
+  secure: SESSION_CONFIG.cookie.secure,
+  httpOnly: SESSION_CONFIG.cookie.httpOnly,
+  maxAge: SESSION_CONFIG.cookie.maxAge / (60 * 60 * 1000) + " heures"
+}); 

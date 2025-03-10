@@ -39,6 +39,7 @@ import {
 import { authMiddleware } from "./middleware/auth.middleware.js";
 import authRoutes from "./routes/auth.routes.js";
 import { handleSocket } from "./ws.server.js";
+import { AuthenticatedRequest } from "./types";
 
 /**
  * Initialisation du fichier data.md au démarrage
@@ -96,7 +97,41 @@ async function startServer() {
   app.use(cookieParser());
   
   // Configuration de la session
-  app.use(session(SESSION_CONFIG));
+  // En production, il est recommandé d'utiliser un store de session persistant
+  // comme Redis ou MongoDB, mais pour simplifier, nous utilisons MemoryStore
+  // avec des logs supplémentaires pour le débogage
+  const sessionMiddleware = session(SESSION_CONFIG);
+
+  // Ajouter un middleware pour logger les sessions
+  app.use((req, res, next) => {
+    const originalSend = res.send;
+    res.send = function(body) {
+      console.log(`[SESSION_DEBUG] Réponse envoyée pour ${req.path}, cookies:`, req.headers.cookie);
+      return originalSend.call(this, body);
+    };
+    next();
+  });
+  
+  app.use(sessionMiddleware);
+  
+  // Ajouter un middleware pour logger les sessions après leur initialisation
+  app.use((req: AuthenticatedRequest, res, next) => {
+    console.log(`[SESSION_DEBUG] Session après initialisation pour ${req.path}:`, {
+      id: req.sessionID,
+      isAuthenticated: req.session?.isAuthenticated,
+      cookie: req.session?.cookie
+    });
+    
+    // Intercepter la fin de la requête pour logger l'état final de la session
+    res.on('finish', () => {
+      console.log(`[SESSION_DEBUG] Fin de requête pour ${req.path}, session:`, {
+        id: req.sessionID,
+        isAuthenticated: req.session?.isAuthenticated
+      });
+    });
+    
+    next();
+  });
   
   // Routes d'authentification (sans middleware d'authentification)
   app.use(`${BASE_PATH}/auth`, authRoutes);

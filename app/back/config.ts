@@ -29,7 +29,7 @@ export const MICROSOFT_CONFIG = {
   postLogoutRedirectUri:
     process.env.MICROSOFT_POST_LOGOUT_REDIRECT_URI ||
     `http://localhost:${PORT}${BASE_PATH}`,
-  scopes: ["User.Read"],
+  scopes: ["User.Read", "offline_access"],
 };
 
 // Configuration MSAL
@@ -45,7 +45,7 @@ export const MSAL_CONFIG = {
         console.log(`[MSAL] ${message}`);
       },
       piiLoggingEnabled: false,
-      logLevel: LogLevel.Verbose, // Augmenter le niveau de log pour MSAL
+      logLevel: LogLevel.Verbose,
     },
   },
 };
@@ -53,13 +53,15 @@ export const MSAL_CONFIG = {
 // Configuration des sessions
 export const SESSION_CONFIG = {
   secret: SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
+  resave: true,
+  saveUninitialized: true,
+  name: "bot-rh.sid",
   cookie: {
     secure: IS_PRODUCTION,
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 heures
-    sameSite: IS_PRODUCTION ? 'none' : 'lax', // Ajouter sameSite pour les cookies en production
+    sameSite: IS_PRODUCTION ? 'none' as const : 'lax' as const,
+    maxAge: 24 * 60 * 60 * 1000,
+    path: BASE_PATH || '/',
   },
 };
 
@@ -92,7 +94,9 @@ console.log("[CONFIG] Configuration des sessions:", {
   secure: SESSION_CONFIG.cookie.secure,
   httpOnly: SESSION_CONFIG.cookie.httpOnly,
   sameSite: SESSION_CONFIG.cookie.sameSite,
-  maxAge: SESSION_CONFIG.cookie.maxAge / (60 * 60 * 1000) + " heures"
+  path: SESSION_CONFIG.cookie.path,
+  maxAge: SESSION_CONFIG.cookie.maxAge / (60 * 60 * 1000) + " heures",
+  name: SESSION_CONFIG.name
 });
 
 // Vérifier la configuration Microsoft
@@ -112,4 +116,8 @@ if (IS_PRODUCTION) {
     console.error("[CONFIG] ERREUR: L'URL de redirection après déconnexion doit être en HTTPS en production!");
     console.error("[CONFIG] URL actuelle:", MICROSOFT_CONFIG.postLogoutRedirectUri);
   }
+  
+  // Avertissement sur l'utilisation de MemoryStore
+  console.warn("[CONFIG] ATTENTION: Vous utilisez MemoryStore pour les sessions en production.");
+  console.warn("[CONFIG] Il est recommandé d'utiliser un store de session persistant comme Redis ou MongoDB.");
 } 

@@ -5,7 +5,7 @@
  * Il fournit des méthodes pour l'authentification, la gestion des tokens et la déconnexion.
  */
 
-import { ConfidentialClientApplication } from "@azure/msal-node";
+import { ConfidentialClientApplication, AuthenticationResult } from "@azure/msal-node";
 import { MSAL_CONFIG, MICROSOFT_CONFIG } from "../config";
 import { AuthenticatedRequest } from "../types";
 
@@ -28,6 +28,7 @@ export async function getAuthUrl(): Promise<string> {
   const authCodeUrlParameters = {
     scopes: MICROSOFT_CONFIG.scopes,
     redirectUri: MICROSOFT_CONFIG.redirectUri,
+    prompt: "select_account", // Forcer la sélection du compte
   };
 
   try {
@@ -64,13 +65,7 @@ export async function handleCallback(req: AuthenticatedRequest, code: string): P
 
     if (tokenResponse) {
       console.log("[AUTH] Token obtenu avec succès");
-      console.log("[AUTH] Informations du token:", {
-        accessTokenLength: tokenResponse.accessToken.length,
-        hasRefreshToken: !!tokenResponse.refreshToken,
-        expiresOn: tokenResponse.expiresOn,
-        accountId: tokenResponse.account?.homeAccountId
-      });
-
+      
       // Vérifier si le token contient les informations nécessaires
       if (!tokenResponse.accessToken) {
         console.error("[AUTH] ERREUR: Le token d'accès est manquant dans la réponse");
@@ -82,19 +77,20 @@ export async function handleCallback(req: AuthenticatedRequest, code: string): P
       req.session.accessToken = tokenResponse.accessToken;
       
       // Vérifier et stocker le refresh token
-      if (tokenResponse.refreshToken) {
-        req.session.refreshToken = tokenResponse.refreshToken;
+      // @ts-ignore - refreshToken peut exister dans certaines implémentations
+      const refreshToken = tokenResponse.refreshToken;
+      
+      if (refreshToken) {
+        req.session.refreshToken = refreshToken;
         console.log("[AUTH] Refresh token stocké dans la session");
       } else {
-        // Utiliser la propriété non standard si elle existe
-        // @ts-ignore - refreshToken peut exister dans certaines implémentations
-        const refreshToken = tokenResponse.refreshToken;
-        if (refreshToken) {
-          req.session.refreshToken = refreshToken;
-          console.log("[AUTH] Refresh token non standard stocké dans la session");
-        } else {
-          console.warn("[AUTH] ATTENTION: Aucun refresh token reçu de Microsoft");
-        }
+        console.warn("[AUTH] ATTENTION: Aucun refresh token reçu de Microsoft");
+        console.log("[AUTH] Réponse complète:", JSON.stringify({
+          ...tokenResponse,
+          accessToken: tokenResponse.accessToken ? `[Token de longueur ${tokenResponse.accessToken.length}]` : null,
+          // @ts-ignore
+          refreshToken: refreshToken ? `[Token de longueur ${refreshToken.length}]` : null,
+        }, null, 2));
       }
       
       req.session.tokenExpires = tokenResponse.expiresOn ? 
@@ -163,31 +159,21 @@ export async function refreshToken(req: AuthenticatedRequest): Promise<boolean> 
     
     if (tokenResponse) {
       console.log("[AUTH] Token rafraîchi avec succès");
-      console.log("[AUTH] Nouvelles informations du token:", {
-        accessTokenLength: tokenResponse.accessToken.length,
-        hasRefreshToken: !!tokenResponse.refreshToken,
-        expiresOn: tokenResponse.expiresOn
-      });
-
+      
       // Mise à jour de la session avec les nouveaux tokens
       req.session.accessToken = tokenResponse.accessToken;
       
       // Vérifier et stocker le refresh token
-      if (tokenResponse.refreshToken) {
-        req.session.refreshToken = tokenResponse.refreshToken;
+      // @ts-ignore - refreshToken peut exister dans certaines implémentations
+      const refreshToken = tokenResponse.refreshToken;
+      
+      if (refreshToken) {
+        req.session.refreshToken = refreshToken;
         console.log("[AUTH] Nouveau refresh token stocké dans la session");
       } else {
-        // Utiliser la propriété non standard si elle existe
-        // @ts-ignore - refreshToken peut exister dans certaines implémentations
-        const refreshToken = tokenResponse.refreshToken;
-        if (refreshToken) {
-          req.session.refreshToken = refreshToken;
-          console.log("[AUTH] Nouveau refresh token non standard stocké dans la session");
-        } else {
-          console.warn("[AUTH] ATTENTION: Aucun nouveau refresh token reçu de Microsoft");
-          // Conserver l'ancien refresh token
-          console.log("[AUTH] Conservation de l'ancien refresh token");
-        }
+        console.warn("[AUTH] ATTENTION: Aucun nouveau refresh token reçu de Microsoft");
+        // Conserver l'ancien refresh token
+        console.log("[AUTH] Conservation de l'ancien refresh token");
       }
       
       req.session.tokenExpires = tokenResponse.expiresOn ? 

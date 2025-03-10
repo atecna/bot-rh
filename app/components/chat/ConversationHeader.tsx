@@ -1,4 +1,4 @@
-import { ConversationHeaderProps } from "../types/chat";
+import { ConversationHeaderProps, RootContext } from "../types/chat";
 import { motion } from "framer-motion";
 import { useOutletContext } from "@remix-run/react";
 import { useState, useEffect, useRef } from "react";
@@ -7,7 +7,7 @@ export default function ConversationHeader({
   title,
   onMenuToggle,
 }: ConversationHeaderProps) {
-  const { userName, basePath } = useOutletContext<{ userName: string, basePath: string }>();
+  const { userName, basePath } = useOutletContext<RootContext>();
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   
@@ -63,16 +63,16 @@ export default function ConversationHeader({
         {title}
       </motion.h1>
 
-      <div className="flex items-center">
-        <div className="relative" ref={menuRef}>
-          <motion.div
+      {userName ? (
+        <div className="flex items-center">
+          <div className="relative" ref={menuRef}>
+            <motion.div
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setShowMenu(!showMenu)}
             className="w-8 h-8 rounded-full bg-atecna-corail text-white flex items-center justify-center cursor-pointer"
           >
-            {userName
-              .split(" ")
+            {userName.split(" ")
               .map((name) => name[0])
               .join("")
               .toUpperCase()}
@@ -88,8 +88,9 @@ export default function ConversationHeader({
               </a>
             </div>
           )}
+          </div>
         </div>
-      </div>
+      ): <div />}
     </motion.div>
   );
 }

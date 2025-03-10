@@ -18,4 +18,9 @@ export interface ConversationHeaderProps {
   socketStatus: string;
   onMenuToggle: () => void;
   isMobile?: boolean;
-} 
+}
+
+export interface RootContext {
+  userName?: string;
+  basePath: string;
+}

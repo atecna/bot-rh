@@ -102,7 +102,9 @@ async function startServer() {
   app.use(`${BASE_PATH}/auth`, authRoutes);
   
   // Middleware d'authentification pour toutes les autres routes
-  app.use(authMiddleware);
+  if (process.env.USE_AUTH !== "false") {
+    app.use(authMiddleware);
+  }
   
   // Créer l'application Express pour Remix
   const remixApp = express();

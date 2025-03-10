@@ -66,19 +66,50 @@ export async function handleCallback(req: AuthenticatedRequest, code: string): P
       console.log("[AUTH] Token obtenu avec succès");
       console.log("[AUTH] Informations du token:", {
         accessTokenLength: tokenResponse.accessToken.length,
+        hasRefreshToken: !!tokenResponse.refreshToken,
         expiresOn: tokenResponse.expiresOn,
         accountId: tokenResponse.account?.homeAccountId
       });
 
+      // Vérifier si le token contient les informations nécessaires
+      if (!tokenResponse.accessToken) {
+        console.error("[AUTH] ERREUR: Le token d'accès est manquant dans la réponse");
+        throw new Error("Token d'accès manquant");
+      }
+
       // Stocke les informations dans la session
       req.session.isAuthenticated = true;
       req.session.accessToken = tokenResponse.accessToken;
-      // @ts-ignore - refreshToken existe dans la réponse
-      req.session.refreshToken = tokenResponse.refreshToken;
+      
+      // Vérifier et stocker le refresh token
+      if (tokenResponse.refreshToken) {
+        req.session.refreshToken = tokenResponse.refreshToken;
+        console.log("[AUTH] Refresh token stocké dans la session");
+      } else {
+        // Utiliser la propriété non standard si elle existe
+        // @ts-ignore - refreshToken peut exister dans certaines implémentations
+        const refreshToken = tokenResponse.refreshToken;
+        if (refreshToken) {
+          req.session.refreshToken = refreshToken;
+          console.log("[AUTH] Refresh token non standard stocké dans la session");
+        } else {
+          console.warn("[AUTH] ATTENTION: Aucun refresh token reçu de Microsoft");
+        }
+      }
+      
       req.session.tokenExpires = tokenResponse.expiresOn ? 
         new Date(tokenResponse.expiresOn).getTime() : 
         Date.now() + 3600 * 1000;
       req.session.account = tokenResponse.account;
+      
+      // Forcer la sauvegarde de la session
+      req.session.save((err) => {
+        if (err) {
+          console.error("[AUTH] ERREUR lors de la sauvegarde de la session:", err);
+        } else {
+          console.log("[AUTH] Session sauvegardée avec succès");
+        }
+      });
       
       console.log("[AUTH] Session mise à jour avec les informations d'authentification");
       console.log("[AUTH] État de la session:", {
@@ -134,16 +165,43 @@ export async function refreshToken(req: AuthenticatedRequest): Promise<boolean> 
       console.log("[AUTH] Token rafraîchi avec succès");
       console.log("[AUTH] Nouvelles informations du token:", {
         accessTokenLength: tokenResponse.accessToken.length,
+        hasRefreshToken: !!tokenResponse.refreshToken,
         expiresOn: tokenResponse.expiresOn
       });
 
       // Mise à jour de la session avec les nouveaux tokens
       req.session.accessToken = tokenResponse.accessToken;
-      // @ts-ignore - refreshToken existe dans la réponse
-      req.session.refreshToken = tokenResponse.refreshToken;
+      
+      // Vérifier et stocker le refresh token
+      if (tokenResponse.refreshToken) {
+        req.session.refreshToken = tokenResponse.refreshToken;
+        console.log("[AUTH] Nouveau refresh token stocké dans la session");
+      } else {
+        // Utiliser la propriété non standard si elle existe
+        // @ts-ignore - refreshToken peut exister dans certaines implémentations
+        const refreshToken = tokenResponse.refreshToken;
+        if (refreshToken) {
+          req.session.refreshToken = refreshToken;
+          console.log("[AUTH] Nouveau refresh token non standard stocké dans la session");
+        } else {
+          console.warn("[AUTH] ATTENTION: Aucun nouveau refresh token reçu de Microsoft");
+          // Conserver l'ancien refresh token
+          console.log("[AUTH] Conservation de l'ancien refresh token");
+        }
+      }
+      
       req.session.tokenExpires = tokenResponse.expiresOn ? 
         new Date(tokenResponse.expiresOn).getTime() : 
         Date.now() + 3600 * 1000;
+      
+      // Forcer la sauvegarde de la session
+      req.session.save((err) => {
+        if (err) {
+          console.error("[AUTH] ERREUR lors de la sauvegarde de la session après rafraîchissement:", err);
+        } else {
+          console.log("[AUTH] Session sauvegardée avec succès après rafraîchissement");
+        }
+      });
       
       console.log("[AUTH] Session mise à jour avec les nouveaux tokens");
       console.log("[AUTH] Nouvel état de la session:", {

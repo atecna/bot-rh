@@ -7,7 +7,7 @@
  */
 
 import { Response, NextFunction } from "express";
-import { BASE_PATH } from "../config";
+import { BASE_PATH, IS_PRODUCTION } from "../config";
 import { refreshToken } from "../auth/microsoft";
 import { AuthenticatedRequest } from "../types";
 
@@ -40,6 +40,27 @@ export const authMiddleware = async (
 ) => {
   console.log(`[AUTH_MIDDLEWARE] Vérification d'authentification pour: ${req.path}`);
   console.log(`[AUTH_MIDDLEWARE] Méthode: ${req.method}, URL: ${req.originalUrl}`);
+  
+  // Vérifier les cookies et les headers
+  console.log(`[AUTH_MIDDLEWARE] Cookies:`, req.cookies);
+  console.log(`[AUTH_MIDDLEWARE] Headers:`, {
+    host: req.headers.host,
+    origin: req.headers.origin,
+    referer: req.headers.referer,
+    'user-agent': req.headers['user-agent'],
+    'x-forwarded-for': req.headers['x-forwarded-for'],
+    'x-forwarded-proto': req.headers['x-forwarded-proto']
+  });
+  
+  // Vérifier si le protocole est HTTPS en production
+  if (IS_PRODUCTION) {
+    const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
+    console.log(`[AUTH_MIDDLEWARE] Protocole HTTPS: ${isHttps}`);
+    if (!isHttps) {
+      console.warn(`[AUTH_MIDDLEWARE] ATTENTION: Connexion non sécurisée en production. Les cookies sécurisés ne fonctionneront pas.`);
+    }
+  }
+  
   console.log(`[AUTH_MIDDLEWARE] État de la session:`, {
     isAuthenticated: req.session.isAuthenticated,
     hasAccessToken: !!req.session.accessToken,

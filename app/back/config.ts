@@ -59,6 +59,7 @@ export const SESSION_CONFIG = {
     secure: IS_PRODUCTION,
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 heures
+    sameSite: IS_PRODUCTION ? 'none' : 'lax', // Ajouter sameSite pour les cookies en production
   },
 };
 
@@ -90,5 +91,25 @@ console.log("[CONFIG] Configuration Microsoft:", {
 console.log("[CONFIG] Configuration des sessions:", {
   secure: SESSION_CONFIG.cookie.secure,
   httpOnly: SESSION_CONFIG.cookie.httpOnly,
+  sameSite: SESSION_CONFIG.cookie.sameSite,
   maxAge: SESSION_CONFIG.cookie.maxAge / (60 * 60 * 1000) + " heures"
-}); 
+});
+
+// Vérifier la configuration Microsoft
+if (IS_PRODUCTION) {
+  if (!MICROSOFT_CONFIG.clientId || !MICROSOFT_CONFIG.tenantId || !MICROSOFT_CONFIG.clientSecret) {
+    console.error("[CONFIG] ERREUR: Paramètres d'authentification Microsoft manquants en production!");
+  }
+  
+  // Vérifier si l'URL de redirection est en HTTPS
+  if (!MICROSOFT_CONFIG.redirectUri.startsWith('https://')) {
+    console.error("[CONFIG] ERREUR: L'URL de redirection doit être en HTTPS en production!");
+    console.error("[CONFIG] URL actuelle:", MICROSOFT_CONFIG.redirectUri);
+  }
+  
+  // Vérifier si l'URL de redirection après déconnexion est en HTTPS
+  if (!MICROSOFT_CONFIG.postLogoutRedirectUri.startsWith('https://')) {
+    console.error("[CONFIG] ERREUR: L'URL de redirection après déconnexion doit être en HTTPS en production!");
+    console.error("[CONFIG] URL actuelle:", MICROSOFT_CONFIG.postLogoutRedirectUri);
+  }
+} 

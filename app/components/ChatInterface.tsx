@@ -400,7 +400,7 @@ export default function ChatInterface() {
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar - masqué sur mobile */}
       <div className="hidden md:block md:w-64 lg:w-80 shrink-0">
-        <ConversationList 
+        <ConversationList
           threads={threads}
           activeThreadId={activeThreadId}
           onSelectThread={setActiveThreadId}
@@ -408,19 +408,19 @@ export default function ChatInterface() {
           onClearThreads={clearThreads}
         />
       </div>
-      
+
       {/* Menu mobile déroulant */}
       {isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-50 md:hidden" 
-          role="dialog" 
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 md:hidden"
+          role="dialog"
           aria-modal="true"
         >
-          <div 
-            className="absolute top-0 left-0 w-3/4 h-full overflow-y-auto" 
+          <div
+            className="absolute top-0 left-0 w-3/4 h-full overflow-y-auto"
             role="document"
           >
-            <ConversationList 
+            <ConversationList
               threads={threads}
               activeThreadId={activeThreadId}
               onSelectThread={setActiveThreadId}
@@ -432,30 +432,28 @@ export default function ChatInterface() {
           </div>
         </div>
       )}
-      
+
       {/* Contenu principal */}
       <div className="flex flex-col flex-1 h-full overflow-hidden relative">
         {/* En-tête - uniquement sur mobile */}
-        <div className="md:hidden">
-          <ConversationHeader 
-            title={getActiveThreadTitle()}
-            socketStatus={socketStatus}
-            onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            isMobile={true}
-          />
-        </div>
-        
+        <ConversationHeader
+          title={getActiveThreadTitle()}
+          socketStatus={socketStatus}
+          onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          isMobile={true}
+        />
+
         {/* Zone des messages */}
-        <MessageList 
+        <MessageList
           messages={activeMessages()}
           copiedMessageId={copiedMessageId}
           onCopyMessage={handleCopyMessage}
           onStarterClick={handleStarterClick}
         />
-        
+
         {/* Zone de saisie flottante */}
         <div className="absolute bottom-0 left-0 right-0 pointer-events-none pb-4">
-          <MessageInput 
+          <MessageInput
             inputValue={inputValue}
             setInputValue={setInputValue}
             handleSubmit={handleSubmit}

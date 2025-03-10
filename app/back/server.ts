@@ -115,7 +115,10 @@ async function startServer() {
       : async () => {
           const build = await import("../../build/server/index.js");
           return build;
-        },
+      },
+    getLoadContext: (req, res) => ({
+      session: req.session,
+    }),
   });
   
   // Configurer l'application Remix

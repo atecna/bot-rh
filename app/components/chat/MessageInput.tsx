@@ -19,17 +19,14 @@ export default function MessageInput({
   isProcessing
 }: MessageInputProps) {
   return (
-    <motion.div 
+    <motion.div
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3 }}
       className="px-4 pb-8 pt-2 pointer-events-auto"
     >
-      <form 
-        onSubmit={handleSubmit} 
-        className="max-w-xl mx-auto relative"
-      >
-        <motion.div 
+      <form onSubmit={handleSubmit} className="max-w-xl mx-auto relative">
+        <motion.div
           whileTap={{ scale: 0.99 }}
           className="flex items-center bg-white rounded-2xl overflow-hidden shadow-md border border-gray-200 focus-within:ring-1 focus-within:ring-atecna-corail focus-within:border-atecna-corail"
         >
@@ -48,28 +45,38 @@ export default function MessageInput({
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             className={`p-3 mr-1 rounded-md transition-colors duration-200 ${
-              isProcessing || !inputValue.trim() 
-                ? 'text-gray-300 cursor-not-allowed' 
-                : 'text-atecna-corail hover:bg-gray-100 hover:text-atecna-corail'
+              isProcessing || !inputValue.trim()
+                ? "text-gray-300 cursor-not-allowed"
+                : "text-atecna-corail hover:bg-gray-100 hover:text-atecna-corail"
             }`}
             disabled={isProcessing || !inputValue.trim()}
           >
-            <motion.svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-5 w-5" 
-              fill="none" 
-              viewBox="0 0 24 24" 
+            <motion.svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
               stroke="currentColor"
               animate={inputValue.trim() ? { rotate: [0, 5, 0] } : {}}
               transition={{ duration: 0.3, repeat: 0 }}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+              />
             </motion.svg>
           </motion.button>
         </motion.div>
+        <p className="text-xs text-gray-500 mt-2 text-center">
+          Les réponses sont générées par IA, sur base de données accessible dans
+          le Notion Atecna. En cas de doute, veuillez contacter les RH à
+          rh@atecna.fr
+        </p>
         <AnimatePresence>
           {isProcessing && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}

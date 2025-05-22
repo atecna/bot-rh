@@ -35,11 +35,12 @@ import {
   IS_PRODUCTION, 
   SESSION_CONFIG,
   SOCKET_IO_CONFIG 
-} from "./config";
+} from "./config.js";
 import { authMiddleware } from "./middleware/auth.middleware.js";
 import authRoutes from "./routes/auth.routes.js";
 import { handleSocket } from "./ws.server.js";
-import { AuthenticatedRequest } from "./types";
+import { AuthenticatedRequest } from "./types.js";
+import { getDataLoader } from "./data-loader.js";
 
 /**
  * Initialisation du fichier data.md au démarrage
@@ -83,6 +84,15 @@ async function setupViteDevServer() {
 async function startServer() {
   // Créer le fichier data.md
   initializeDataFile();
+  
+  // Initialiser le DataLoader pour charger le contenu du fichier data.md en mémoire
+  console.log("Initialisation du DataLoader...");
+  const dataLoader = getDataLoader();
+  console.log("DataLoader initialisé avec succès.");
+  
+  // Recharger les données après la création du fichier
+  dataLoader.reloadData();
+  console.log("Contenu du fichier data.md rechargé après initialisation.");
   
   // Initialiser le serveur de développement Vite (si en mode dev)
   const viteDevServer = await setupViteDevServer();

@@ -6,8 +6,8 @@
  */
 
 import { ConfidentialClientApplication, AuthenticationResult } from "@azure/msal-node";
-import { MSAL_CONFIG, MICROSOFT_CONFIG } from "../config";
-import { AuthenticatedRequest } from "../types";
+import { MSAL_CONFIG, MICROSOFT_CONFIG } from "../config.js";
+import { AuthenticatedRequest } from "../types.js";
 
 /**
  * Instance de l'application MSAL pour l'authentification Microsoft
@@ -99,7 +99,7 @@ export async function handleCallback(req: AuthenticatedRequest, code: string): P
       req.session.account = tokenResponse.account;
       
       // Forcer la sauvegarde de la session
-      req.session.save((err) => {
+      req.session.save((err: Error | null) => {
         if (err) {
           console.error("[AUTH] ERREUR lors de la sauvegarde de la session:", err);
         } else {
@@ -181,7 +181,7 @@ export async function refreshToken(req: AuthenticatedRequest): Promise<boolean> 
         Date.now() + 3600 * 1000;
       
       // Forcer la sauvegarde de la session
-      req.session.save((err) => {
+      req.session.save((err: Error | null) => {
         if (err) {
           console.error("[AUTH] ERREUR lors de la sauvegarde de la session après rafraîchissement:", err);
         } else {

@@ -1,5 +1,3 @@
-import React from "react";
-
 export interface SyncResult {
   id: string;
   name: string;

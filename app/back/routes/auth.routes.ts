@@ -8,9 +8,9 @@
  */
 
 import express, { Router, Response } from "express";
-import { AuthenticatedRequest } from "../types";
-import { getAuthUrl, handleCallback } from "../auth/microsoft";
-import { BASE_PATH, MICROSOFT_CONFIG, MICROSOFT_LOGOUT_URL } from "../config";
+import { AuthenticatedRequest } from "../types.js";
+import { getAuthUrl, handleCallback } from "../auth/microsoft.js";
+import { BASE_PATH, MICROSOFT_CONFIG, MICROSOFT_LOGOUT_URL } from "../config.js";
 
 const router: Router = express.Router();
 
@@ -71,7 +71,7 @@ router.get("/microsoft/callback", async (req: AuthenticatedRequest, res: Respons
     });
     
     // Forcer la sauvegarde de la session avant la redirection
-    req.session.save((err) => {
+    req.session.save((err: Error | null) => {
       if (err) {
         console.error("[AUTH_ROUTES] Erreur lors de la sauvegarde de la session:", err);
         return res.status(500).send("Erreur lors de la sauvegarde de la session");

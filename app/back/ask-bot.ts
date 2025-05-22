@@ -1,8 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import fs from "fs";
-import path from "path";
 import { Socket } from "socket.io";
 import { OperationTimer } from "../utils/timer.server.js";
+import { getDataContent } from "./data-loader.js";
 
 // Interface pour les messages de conversation
 interface ConversationMessage {
@@ -22,7 +21,6 @@ export default async function askPholon(
   const CONFIG = {
     apiKey: process.env.GOOGLE_API_KEY as string,
     model: process.env.GEMINI_MODEL || "gemini-2.0-flash-exp",
-    dataPath: process.env.DATA_PATH || "./data.md",
     generationConfig: {
       maxOutputTokens: Number(process.env.MAX_TOKENS) || 150,
       temperature: Number(process.env.TEMPERATURE) || 0.7,
@@ -32,20 +30,10 @@ export default async function askPholon(
   };
 
   // Initialisation de l'API
-  console.log("CONFIG", CONFIG);
   const genAI = new GoogleGenerativeAI(CONFIG.apiKey);
 
-  // Chargement des données au démarrage
-  let DATA_CONTENT = "";
-  try {
-    DATA_CONTENT = fs.readFileSync(path.resolve(CONFIG.dataPath), "utf-8");
-    console.log(
-      `Données chargées depuis ${CONFIG.dataPath} (${DATA_CONTENT.length} caractères)`
-    );
-  } catch (error) {
-    console.error(`Erreur lors du chargement des données: ${error}`);
-    DATA_CONTENT = "Aucune donnée disponible.";
-  }
+  // Récupération des données depuis le DataLoader (déjà chargé au démarrage)
+  const DATA_CONTENT = getDataContent();
 
   const timer = new OperationTimer();
   timer.log("Question reçue : " + rawQuestion);

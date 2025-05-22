@@ -7,9 +7,9 @@
  */
 
 import { Response, NextFunction } from "express";
-import { BASE_PATH, IS_PRODUCTION } from "../config";
-import { refreshToken } from "../auth/microsoft";
-import { AuthenticatedRequest } from "../types";
+import { BASE_PATH, IS_PRODUCTION } from "../config.js";
+import { refreshToken } from "../auth/microsoft.js";
+import { AuthenticatedRequest } from "../types.js";
 
 /**
  * Vérifie si l'URL doit être exemptée de l'authentification
@@ -108,7 +108,7 @@ export const authMiddleware = async (
   
   // Forcer la sauvegarde de la session avant la redirection
   if (req.session) {
-    req.session.save((err) => {
+    req.session.save((err: Error | null) => {
       if (err) {
         console.error("[AUTH_MIDDLEWARE] Erreur lors de la sauvegarde de la session:", err);
       }

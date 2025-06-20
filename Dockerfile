@@ -26,7 +26,6 @@ RUN npm ci --production && npm install dotenv
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/app/resources ./app/resources
 COPY --from=builder /app/server.ts ./server.ts
 COPY --from=builder /app/vite.config.ts ./vite.config.ts
 COPY --from=builder /app/tsconfig.json ./tsconfig.json

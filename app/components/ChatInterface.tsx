@@ -1,5 +1,5 @@
 import { useSocket } from "~/context";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { ConversationThread, Message } from "./types/chat";
 import { copyToClipboard } from "./utils/clipboard";
 import ConversationList from "./chat/ConversationList";
@@ -16,11 +16,6 @@ export default function ChatInterface() {
   const [socketStatus, setSocketStatus] = useState<string>("non connecté");
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
-  // Référence pour stocker le texte en cours de streaming
-  const streamingTextRef = useRef<string>("");
-  // ID du message en cours de streaming
-  const streamingMessageIdRef = useRef<string | null>(null);
   
   // Récupération du socket
   const socket = useSocket();
@@ -98,65 +93,47 @@ export default function ChatInterface() {
 
   // Effet pour écouter les événements socket
   useEffect(() => {
-    if (!socket || !activeThreadId) return;
+    if (!socket) {
+      console.log("Pas de socket disponible pour écouter les événements");
+      return;
+    }
+    
+    console.log("Configuration des écouteurs d'événements socket pour le thread:", activeThreadId);
     
     // Réinitialiser l'état au changement de thread ou de socket
     setIsProcessing(false);
-    streamingTextRef.current = "";
-    streamingMessageIdRef.current = null;
     
-    // Gestion des réponses en streaming
-    socket.on("stream-response", (chunk: string) => {
-      console.log("Chunk reçu:", chunk);
+    // Gestion du début de traitement
+    socket.on("processing-start", () => {
+      console.log("Traitement commencé");
       setIsProcessing(true);
+    });
+    
+    // Gestion de la réponse complète
+    socket.on("complete-response", (response: string) => {
+      console.log("Réponse complète reçue:", response.substring(0, 50) + "...");
+      setIsProcessing(false);
       
-      // Ajouter le chunk au texte en cours
-      streamingTextRef.current += chunk;
-      
+      // Ajouter la réponse comme nouveau message
       setThreads(prev => {
         const updatedThreads = [...prev];
         const threadIndex = updatedThreads.findIndex(t => t.id === activeThreadId);
         
-        if (threadIndex === -1) return prev;
+        if (threadIndex === -1) {
+          console.error("Thread non trouvé pour la réponse:", activeThreadId);
+          return prev;
+        }
         
         const thread = updatedThreads[threadIndex];
         const messages = [...thread.messages];
         
-        // Si nous avons déjà un message en cours de streaming
-        if (streamingMessageIdRef.current) {
-          // Trouver l'index du message en cours
-          const messageIndex = messages.findIndex(m => m.id === streamingMessageIdRef.current);
-          
-          if (messageIndex !== -1) {
-            // Mettre à jour le message existant avec le texte complet
-            messages[messageIndex] = {
-              ...messages[messageIndex],
-              text: streamingTextRef.current
-            };
-          } else {
-            // Si le message n'existe plus (cas rare), créer un nouveau
-            const newMessageId = `assistant-${Date.now()}`;
-            streamingMessageIdRef.current = newMessageId;
-            
-            messages.push({
-              id: newMessageId,
-              text: streamingTextRef.current,
-              isUser: false,
-              timestamp: new Date()
-            });
-          }
-        } else {
-          // Créer un nouveau message pour le streaming
-          const newMessageId = `assistant-${Date.now()}`;
-          streamingMessageIdRef.current = newMessageId;
-          
-          messages.push({
-            id: newMessageId,
-            text: streamingTextRef.current,
-            isUser: false,
-            timestamp: new Date()
-          });
-        }
+        // Ajouter le message de l'assistant
+        messages.push({
+          id: `assistant-${Date.now()}`,
+          text: response,
+          isUser: false,
+          timestamp: new Date()
+        });
         
         updatedThreads[threadIndex] = {
           ...thread,
@@ -167,59 +144,12 @@ export default function ChatInterface() {
         return updatedThreads;
       });
     });
-    
-    // Fin du streaming
-    socket.on("stream-end", () => {
-      console.log("Streaming terminé");
-      setIsProcessing(false);
-      
-      // Finaliser le message avec un ID permanent
-      if (streamingMessageIdRef.current) {
-        setThreads(prev => {
-          const updatedThreads = [...prev];
-          const threadIndex = updatedThreads.findIndex(t => t.id === activeThreadId);
-          
-          if (threadIndex === -1) return prev;
-          
-          const thread = updatedThreads[threadIndex];
-          const messages = [...thread.messages];
-          
-          // Trouver l'index du message en cours
-          const messageIndex = messages.findIndex(m => m.id === streamingMessageIdRef.current);
-          
-          if (messageIndex !== -1) {
-            // Remplacer l'ID temporaire par un ID permanent
-            const permanentId = `assistant-final-${Date.now()}`;
-            messages[messageIndex] = {
-              ...messages[messageIndex],
-              id: permanentId
-            };
-          }
-          
-          updatedThreads[threadIndex] = {
-            ...thread,
-            messages,
-            updatedAt: new Date()
-          };
-          
-          return updatedThreads;
-        });
-      }
-      
-      // Réinitialiser les références
-      streamingTextRef.current = "";
-      streamingMessageIdRef.current = null;
-    });
 
     // Gestion des erreurs
     socket.on("error", (error: string) => {
       console.error("Socket error:", error);
       setIsProcessing(false);
       
-      // Réinitialiser les références
-      streamingTextRef.current = "";
-      streamingMessageIdRef.current = null;
-      
       if (activeThreadId) {
         setThreads(prev => prev.map(thread => {
           if (thread.id === activeThreadId) {
@@ -238,40 +168,13 @@ export default function ChatInterface() {
         }));
       }
     });
-
-    // Gestion des erreurs de streaming
-    socket.on("stream-error", (error: string) => {
-      console.error("Stream error:", error);
-      setIsProcessing(false);
-      
-      // Réinitialiser les références
-      streamingTextRef.current = "";
-      streamingMessageIdRef.current = null;
-      
-      if (activeThreadId) {
-        setThreads(prev => prev.map(thread => {
-          if (thread.id === activeThreadId) {
-            return {
-              ...thread,
-              messages: [...thread.messages, {
-                id: `error-${Date.now()}`,
-                text: `Erreur: ${error}`,
-                isUser: false,
-                timestamp: new Date()
-              }],
-              updatedAt: new Date()
-            };
-          }
-          return thread;
-        }));
-      }
-    });
-
+    
+    // Nettoyage des écouteurs à la désinscription
     return () => {
-      socket.off("stream-response");
-      socket.off("stream-end");
+      console.log("Nettoyage des écouteurs d'événements socket");
+      socket.off("processing-start");
+      socket.off("complete-response");
       socket.off("error");
-      socket.off("stream-error");
     };
   }, [socket, activeThreadId]);
 
@@ -304,21 +207,6 @@ export default function ChatInterface() {
       return;
     }
 
-    // Créer un nouveau thread si aucun n'est actif
-    if (!activeThreadId) {
-      const newThreadId = `thread-${Date.now()}`;
-      const newThread: ConversationThread = {
-        id: newThreadId,
-        title: inputValue.length > 30 ? inputValue.substring(0, 30) + '...' : inputValue,
-        messages: [],
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      
-      setThreads(prev => [...prev, newThread]);
-      setActiveThreadId(newThreadId);
-    }
-
     // Créer le message utilisateur
     const userMessage: Message = {
       id: `user-${Date.now()}`,
@@ -326,38 +214,74 @@ export default function ChatInterface() {
       isUser: true,
       timestamp: new Date()
     };
-    
-    // Mettre à jour le thread actif avec le nouveau message
-    setThreads(prev => prev.map(thread => {
-      if (thread.id === activeThreadId) {
-        // Si c'est le premier message, mettre à jour le titre
-        if (thread.messages.length === 0) {
-          thread.title = inputValue.length > 30 ? inputValue.substring(0, 30) + '...' : inputValue;
-        }
-        
-        return {
-          ...thread,
-          messages: [...thread.messages, userMessage],
-          updatedAt: new Date()
-        };
-      }
-      return thread;
-    }));
-    
-    // Envoyer au serveur avec l'historique des messages du thread actif
-    const currentMessages = activeMessages();
-    const conversationHistory = [...currentMessages, userMessage]
-      .map(msg => ({
-        role: msg.isUser ? 'user' : 'assistant',
-        content: msg.text
-      }))
-      // Filtrer les messages vides
-      .filter(msg => msg.content && msg.content.trim() !== "");
-    
-    socket.emit("ask-question", inputValue, conversationHistory);
-    
-    // Réinitialiser l'input
+
+    let threadToUse = activeThreadId;
+
+    // Créer un nouveau thread si aucun n'est actif
+    if (!activeThreadId) {
+      const newThreadId = `thread-${Date.now()}`;
+      const newThread: ConversationThread = {
+        id: newThreadId,
+        title: inputValue.length > 30 ? inputValue.substring(0, 30) + '...' : inputValue,
+        messages: [userMessage], // Inclure directement le message utilisateur
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      setThreads(prev => [...prev, newThread]);
+      setActiveThreadId(newThreadId);
+      threadToUse = newThreadId;
+    } else {
+      // Mettre à jour le thread actif avec le nouveau message
+      setThreads(prev => {
+        const updatedThreads = prev.map(thread => {
+          if (thread.id === activeThreadId) {
+            // Si c'est le premier message, mettre à jour le titre
+            if (thread.messages.length === 0) {
+              return {
+                ...thread,
+                title: inputValue.length > 30 ? inputValue.substring(0, 30) + '...' : inputValue,
+                messages: [...thread.messages, userMessage],
+                updatedAt: new Date()
+              };
+            }
+            return {
+              ...thread,
+              messages: [...thread.messages, userMessage],
+              updatedAt: new Date()
+            };
+          }
+          return thread;
+        });
+        return updatedThreads;
+      });
+    }
+
+    // Réinitialiser l'input et définir l'état de traitement
     setInputValue("");
+    setIsProcessing(true);
+
+    // Récupérer l'historique de conversation pour le contexte
+    const history = getConversationHistory();
+
+    // Envoyer la requête au serveur
+    console.log("Envoi au serveur:", { message: userMessage.text, history });
+    socket.emit("ask-question", userMessage.text, history);
+  };
+
+  // Fonction pour récupérer l'historique de conversation
+  const getConversationHistory = () => {
+    if (!activeThreadId) {
+      return [{ role: 'user', content: inputValue }];
+    }
+    
+    const thread = threads.find(t => t.id === activeThreadId);
+    if (!thread) return [{ role: 'user', content: inputValue }];
+    
+    return thread.messages.map(msg => ({
+      role: msg.isUser ? 'user' : 'assistant',
+      content: msg.text
+    }));
   };
 
   // Gérer la soumission du formulaire
@@ -399,72 +323,145 @@ export default function ChatInterface() {
     return thread ? thread.title : "Conversation";
   };
 
+  // Fonction pour gérer les clics sur les starters de conversation
+  const handleStarterClick = (text: string) => {
+    if (!socket) {
+      console.log("Socket non disponible");
+      return;
+    }
+
+    // Créer le message utilisateur
+    const userMessage: Message = {
+      id: `user-${Date.now()}`,
+      text: text,
+      isUser: true,
+      timestamp: new Date()
+    };
+
+    let threadToUse = activeThreadId;
+
+    // Si aucun thread actif, en créer un nouveau
+    if (!activeThreadId) {
+      const newThreadId = `thread-${Date.now()}`;
+      const newThread: ConversationThread = {
+        id: newThreadId,
+        title: text.length > 30 ? text.substring(0, 30) + '...' : text,
+        messages: [userMessage],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      setThreads(prev => [...prev, newThread]);
+      setActiveThreadId(newThreadId);
+      threadToUse = newThreadId;
+    } else {
+      // Utiliser le thread actif et y ajouter le message
+      setThreads(prev => {
+        return prev.map(thread => {
+          if (thread.id === activeThreadId) {
+            // Si c'est le premier message, mettre à jour le titre
+            if (thread.messages.length === 0) {
+              return {
+                ...thread,
+                title: text.length > 30 ? text.substring(0, 30) + '...' : text,
+                messages: [...thread.messages, userMessage],
+                updatedAt: new Date()
+              };
+            }
+            return {
+              ...thread,
+              messages: [...thread.messages, userMessage],
+              updatedAt: new Date()
+            };
+          }
+          return thread;
+        });
+      });
+    }
+
+    // Réinitialiser l'input et définir l'état de traitement
+    setInputValue("");
+    setIsProcessing(true);
+    
+    // Préparer l'historique de conversation
+    const history = threadToUse === activeThreadId && activeThreadId !== null
+      ? [...activeMessages().map(msg => ({
+          role: msg.isUser ? 'user' : 'assistant',
+          content: msg.text
+        })), { role: 'user', content: text }]
+      : [{ role: 'user', content: text }];
+    
+    // Envoyer la requête au serveur
+    console.log("Envoi au serveur:", { message: text, history });
+    socket.emit("ask-question", text, history);
+  };
+
   return (
-    <div className="flex flex-col h-screen w-full mx-auto bg-white shadow-xl overflow-hidden md:flex-row">
-      {/* Sidebar pour desktop */}
-      <div className="hidden md:flex md:flex-col md:w-64 bg-atecna-rose border-r border-atecna-corail/20">
-        <ConversationList 
+    <div className="flex h-screen bg-gray-50">
+      {/* Sidebar - masqué sur mobile */}
+      <div className="hidden md:block md:w-64 lg:w-80 shrink-0">
+        <ConversationList
           threads={threads}
           activeThreadId={activeThreadId}
-          setActiveThreadId={setActiveThreadId}
-          createNewThread={createNewThread}
-          clearThreads={clearThreads}
-          socketStatus={socketStatus}
+          onSelectThread={setActiveThreadId}
+          onCreateThread={createNewThread}
+          onClearThreads={clearThreads}
         />
       </div>
-      
+
       {/* Menu mobile déroulant */}
       {isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-50 md:hidden" 
-          role="dialog" 
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 md:hidden"
+          role="dialog"
           aria-modal="true"
         >
-          <div 
-            className="absolute top-0 left-0 w-3/4 h-full bg-atecna-rose overflow-y-auto" 
+          <div
+            className="absolute top-0 left-0 w-3/4 h-full overflow-y-auto"
             role="document"
           >
-            <ConversationList 
+            <ConversationList
               threads={threads}
               activeThreadId={activeThreadId}
-              setActiveThreadId={setActiveThreadId}
-              createNewThread={createNewThread}
-              clearThreads={clearThreads}
+              onSelectThread={setActiveThreadId}
+              onCreateThread={createNewThread}
+              onClearThreads={clearThreads}
               isMobile={true}
               onClose={() => setIsMobileMenuOpen(false)}
             />
           </div>
         </div>
       )}
-      
+
       {/* Contenu principal */}
-      <div className="flex flex-col justify-between flex-1 max-w-full h-full">
-        {/* En-tête */}
-        <ConversationHeader 
+      <div className="flex flex-col flex-1 h-full overflow-hidden relative">
+        {/* En-tête - uniquement sur mobile */}
+        <ConversationHeader
           title={getActiveThreadTitle()}
           socketStatus={socketStatus}
+          onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           isMobile={true}
-          onMenuOpen={() => setIsMobileMenuOpen(true)}
-          onNewThread={createNewThread}
-          onClearThreads={clearThreads}
         />
-        
+
         {/* Zone des messages */}
-        <MessageList 
+        <MessageList
           messages={activeMessages()}
           copiedMessageId={copiedMessageId}
           onCopyMessage={handleCopyMessage}
+          onStarterClick={handleStarterClick}
         />
-        
-        {/* Zone de saisie */}
-        <MessageInput 
-          inputValue={inputValue}
-          setInputValue={setInputValue}
-          handleSubmit={handleSubmit}
-          handleKeyDown={handleKeyDown}
-          handleButtonClick={handleButtonClick}
-          isProcessing={isProcessing}
-        />
+
+        {/* Zone de saisie flottante */}
+        <div className="absolute bottom-0 left-0 right-0 pointer-events-none pb-4">
+          <MessageInput
+            inputValue={inputValue}
+            setInputValue={setInputValue}
+            handleSubmit={handleSubmit}
+            handleKeyDown={handleKeyDown}
+            handleButtonClick={handleButtonClick}
+            isProcessing={isProcessing}
+          />
+        </div>
       </div>
     </div>
   );

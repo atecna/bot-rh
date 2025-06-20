@@ -9,15 +9,22 @@ import {
 import { useEffect, useState } from "react";
 import type { Socket } from "socket.io-client";
 import io from "socket.io-client";
-import type { LinksFunction } from "@remix-run/node";
+import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { SocketProvider } from "~/context";
 import packageJson from "../package.json";
 import "./tailwind.css";
+import { AuthenticatedRequest } from "~/back/types";
 
-export const loader = async () => {
-  return { 
+export const loader = async ({
+  context,
+}: LoaderFunctionArgs & { context: { session: AuthenticatedRequest["session"] } }) => {
+  // @ts-ignore - on récupère le req Express depuis la request Remix
+  const session = context.session;
+
+  return {
     version: packageJson.version,
-    basePath: process.env.BASE_PATH || ''
+    basePath: process.env.BASE_PATH || "",
+    userName: session.account?.name
   };
 };
 
@@ -35,7 +42,7 @@ export const links: LinksFunction = () => [
 ];
 
 export default function App() {
-  const { version, basePath } = useLoaderData<typeof loader>();
+  const { version, basePath, userName } = useLoaderData<typeof loader>();
   const [socket, setSocket] = useState<Socket>();
 
   useEffect(() => {
@@ -48,10 +55,10 @@ export default function App() {
     
     socket.on('connect', () => {
       console.log('[CLIENT] Socket connecté:', socket.id);
-    });
-    
-    socket.on('test', (msg) => {
-      console.log('[CLIENT] Test reçu:', msg);
+      
+      if (userName) {
+        console.log(`[USER AUTHENTIFIÉ] Nom: `);
+      }
     });
     
     socket.on('disconnect', () => {
@@ -62,7 +69,7 @@ export default function App() {
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [userName]);
 
   return (
     <html lang="fr">
@@ -70,14 +77,19 @@ export default function App() {
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#000000" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"></meta>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        ></meta>
         <Meta />
         <Links />
       </head>
       <body>
         <SocketProvider socket={socket}>
-          <Outlet />
-          <div className="fixed bottom-1 right-2 text-xs text-white/30">v{version}</div>
+          <Outlet context={{ userName, basePath }} />
+          <div className="fixed bottom-1 right-2 text-xs text-black/30">
+            v{version}
+          </div>
         </SocketProvider>
         <ScrollRestoration />
         <Scripts />

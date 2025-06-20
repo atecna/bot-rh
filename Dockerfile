@@ -11,6 +11,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 RUN npx tsc --project tsconfig.server.json
+RUN npm run create-data
 
 # Stage de production
 FROM node:23-alpine AS runner
@@ -29,6 +30,11 @@ COPY --from=builder /app/app/resources ./app/resources
 COPY --from=builder /app/server.ts ./server.ts
 COPY --from=builder /app/vite.config.ts ./vite.config.ts
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
+COPY --from=builder /app/tsconfig.server.json ./tsconfig.server.json
+COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/data.md ./data.md
+
+
 
 # Variables d'environnement
 ENV NODE_ENV=production

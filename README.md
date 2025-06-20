@@ -20,7 +20,7 @@ Ce projet est un assistant RH conversationnel qui utilise l'API Gemini pour rép
 - Interface de chat conversationnelle interactive
 - Utilisation de l'API Gemini pour générer des réponses contextuelles
 - Consolidation automatique des données RH depuis le dossier `data`
-- Streaming des réponses en temps réel
+- Modèle de question-réponse classique avec indicateur de chargement
 - Support de différents formats de documentation (Markdown, CSV, etc.)
 - Historique de conversation pour des réponses contextuelles
 

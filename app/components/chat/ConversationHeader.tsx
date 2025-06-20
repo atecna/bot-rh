@@ -1,68 +1,96 @@
-import { ConversationHeaderProps } from "../types/chat";
+import { ConversationHeaderProps, RootContext } from "../types/chat";
+import { motion } from "framer-motion";
+import { useOutletContext } from "@remix-run/react";
+import { useState, useEffect, useRef } from "react";
 
 export default function ConversationHeader({
   title,
-  socketStatus,
-  isMobile,
-  onMenuOpen,
-  onNewThread,
-  onClearThreads
+  onMenuToggle,
 }: ConversationHeaderProps) {
-  if (isMobile) {
-    return (
-      <div className="bg-white text-black p-4 shadow-md flex justify-between items-center">
-        <div>
-          <h1 className="text-xl font-bold">{title}</h1>
-          <div className="text-xs opacity-80">Assistant RH</div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={onMenuOpen}
-            className="bg-atecna-corail hover:bg-atecna-corail/90 text-white p-1.5 rounded-md transition-colors"
-            title="Voir les conversations"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-          <button 
-            onClick={onNewThread}
-            className="bg-atecna-bleu hover:bg-atecna-bleu/90 text-white p-1.5 rounded-md transition-colors"
-            title="Nouvelle conversation"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-          <button 
-            onClick={onClearThreads}
-            className="bg-atecna-corail hover:bg-atecna-corail/90 text-white p-1.5 rounded-md transition-colors"
-            title="Effacer l'historique"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const { userName, basePath } = useOutletContext<RootContext>();
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    }
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
-    <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-white">
-      <h2 className="text-xl font-semibold text-atecna-vert-fonce">{title}</h2>
-      <div className="flex items-center space-x-2">
-        <div className="px-3 py-1 rounded-full bg-atecna-bleu-ciel text-atecna-bleu text-sm">
-          Assistant RH
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="bg-white md:bg-transparent md:border-none md:justify-end text-black py-3 px-4 flex justify-between items-center border-b border-gray-100"
+    >
+      <motion.button
+        onClick={onMenuToggle}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        className="text-atecna-corail hover:text-atecna-corail/90 transition-colors md:hidden"
+        title="Voir les conversations"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 6h16M4 12h16M4 18h16"
+          />
+        </svg>
+      </motion.button>
+
+      <motion.h1
+        initial={{ scale: 0.95 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 0.3 }}
+        className="text-lg font-medium text-atecna-vert-fonce md:hidden"
+      >
+        {title}
+      </motion.h1>
+
+      {userName ? (
+        <div className="flex items-center">
+          <div className="relative" ref={menuRef}>
+            <motion.div
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setShowMenu(!showMenu)}
+            className="w-8 h-8 rounded-full bg-atecna-corail text-white flex items-center justify-center cursor-pointer"
+          >
+            {userName.split(" ")
+              .map((name) => name[0])
+              .join("")
+              .toUpperCase()}
+          </motion.div>
+
+          {showMenu && (
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+              <a
+                href={`${basePath}/auth/logout`}
+                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                Se déconnecter
+              </a>
+            </div>
+          )}
+          </div>
         </div>
-        <div className={`px-3 py-1 rounded-full text-sm ${
-          socketStatus === "connecté" 
-            ? "bg-atecna-vert-clair text-atecna-vert-fonce" 
-            : "bg-atecna-rose text-atecna-corail"
-        }`}>
-          {socketStatus}
-        </div>
-      </div>
-    </div>
+      ): <div />}
+    </motion.div>
   );
-} 
+}

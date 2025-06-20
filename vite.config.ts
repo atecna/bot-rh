@@ -8,10 +8,18 @@ declare module "@remix-run/node" {
   }
 }
 
-export default defineConfig({
-  base: process.env.BASE_PATH + '/' || '/',
+const isProd = process.env.NODE_ENV === "production";
+
+console.log("--------------------------------");
+console.log("isProd", isProd);
+console.log("process.env.NODE_ENV", process.env.NODE_ENV);
+console.log("process.env.BASE_PATH", process.env.BASE_PATH);
+console.log("--------------------------------");
+
+const config = defineConfig({
+  ...(isProd ? { base: "/bot-rh/" } : {}),
   server: {
-    allowedHosts: ["innovation.atecna.fr"]
+    allowedHosts: ["innovation.atecna.fr"],
   },
   plugins: [
     remix({
@@ -22,8 +30,10 @@ export default defineConfig({
         v3_singleFetch: true,
         v3_lazyRouteDiscovery: true,
       },
-      basename: process.env.BASE_PATH || '/',
+      ...(isProd ? { basename: "/bot-rh" } : {}),
     }),
     tsconfigPaths(),
   ],
 });
+
+export default config;
